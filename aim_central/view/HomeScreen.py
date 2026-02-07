@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QColor, QPalette
 from view.ContainerButton import ContainerButton
-from controller.Inventory import Controller
+from aim_central.controller.Inventory import Controller
 
 
 class Color(QWidget):
