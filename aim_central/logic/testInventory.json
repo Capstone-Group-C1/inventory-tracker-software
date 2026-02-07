@@ -4,49 +4,49 @@
       "id": 0,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 2
     },
     {
       "id": 1,
       "contents": "Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 2
     },
     {
       "id": 2,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 0
     },
     {
       "id": 3,
       "contents": "Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 1
     },
     {
       "id": 4,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 2
     },
     {
       "id": 5,
       "contents": "Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 0
     },
     {
       "id": 6,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 1
     },
     {
       "id": 7,
       "contents": "Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 5
+      "currentStock": 0
     }
   ]
 }
