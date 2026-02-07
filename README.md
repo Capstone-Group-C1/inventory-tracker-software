@@ -5,7 +5,7 @@ Software for the Raspberry Pi to control the inventory tracker system.
 ## Setup
 To setup the virtual environment to run on your machine, follow these steps:
 
-### 1. Install Conda
+### 1. Install [Miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install)
 
 
 ### 2. Set up the environment using this command:
