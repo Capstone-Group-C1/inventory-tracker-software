@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QWidget
 from view.HomeScreen import MainWindow
-from aim_central.controller.Inventory import Controller
-from aim_central.logic.CentralSystem import CentralSystem
+from controller.Inventory import Controller
+from logic.CentralSystem import CentralSystem
 # Only needed for access to command line arguments
 import sys
 
