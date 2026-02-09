@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QApplication, QWidget
 from view.HomeScreen import MainWindow
 from controller.Inventory import Controller
 from logic.CentralSystem import CentralSystem
-from aim_central.utils.logging import init_logging
+from utils.logger import init_logging
 # Only needed for access to command line arguments
 import sys
 

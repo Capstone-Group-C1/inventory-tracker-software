@@ -1,7 +1,5 @@
 import os
-from attr import dataclass
 
-@dataclass
 class AIMConfig:
     LOG_DIR: str = os.getenv('LOG_DIR', 'logs')
     LOG_NAME: str = os.getenv('LOG_NAME', 'aim')

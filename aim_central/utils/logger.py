@@ -1,7 +1,6 @@
 import logging
 import sys
-from pathlib import Path
-from aim_central.utils.config import AIMConfig
+from utils.config import AIMConfig
 from logging.handlers import RotatingFileHandler
 
 """Logging Module for AIM"""
