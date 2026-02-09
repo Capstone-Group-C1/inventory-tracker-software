@@ -3,7 +3,6 @@ from view.HomeScreen import MainWindow
 from controller.Inventory import Controller
 from logic.CentralSystem import CentralSystem
 from aim_central.utils.logging import init_logging
-from aim_central.utils.config import AIMConfig
 # Only needed for access to command line arguments
 import sys
 
