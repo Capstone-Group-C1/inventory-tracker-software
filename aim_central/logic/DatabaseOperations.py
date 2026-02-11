@@ -1,8 +1,9 @@
 import sqlite3
 import os
+from config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
-DB_PATH = os.path.join(os.path.dirname(__file__), 'inventory.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), AIMConfig.DB_PATH)
 
 def database_init():
     """Initializes the database with tables."""
@@ -65,6 +66,9 @@ def get_item_id(container_id):
 def find_container(container_id):
     """
     Find a container in the database by its ID.
+
+    @throws sqlite3.OperationalError if the database operation fails.
+    @return a dictionary with container details or None if not found.
     """
     try:
         with sqlite3.connect(DB_PATH) as conn:
