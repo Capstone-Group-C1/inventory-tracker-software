@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from config.config import AIMConfig
+from aim_central.config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
 DB_PATH = os.path.join(os.path.dirname(__file__), AIMConfig.DB_PATH)
