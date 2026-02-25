@@ -4,49 +4,57 @@
       "id": 0,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 2
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 1,
-      "contents": "Airway Adjuncts",
+      "contents": "Child Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 2
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 2,
-      "contents": "Oxygen Masks",
-      "neededStock": 5,
-      "currentStock": 0
+      "contents": "Bandages",
+      "neededStock": 20,
+      "currentStock": 17,
+      "currentWeight": 0.0
     },
     {
       "id": 3,
-      "contents": "Airway Adjuncts",
+      "contents": "Gauze Rolls",
       "neededStock": 5,
-      "currentStock": 1
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 4,
-      "contents": "Oxygen Masks",
+      "contents": "Adult Airway Adjuncts",
       "neededStock": 5,
-      "currentStock": 2
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 5,
-      "contents": "Airway Adjuncts",
+      "contents": "Oxygen Tubing",
       "neededStock": 5,
-      "currentStock": 0
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 6,
-      "contents": "Oxygen Masks",
+      "contents": "Respiratory Masks",
       "neededStock": 5,
-      "currentStock": 1
+      "currentStock": 5,
+      "currentWeight": 0.0
     },
     {
       "id": 7,
-      "contents": "Airway Adjuncts",
-      "neededStock": 5,
-      "currentStock": 0
+      "contents": "Burn Sheets",
+      "neededStock": 20,
+      "currentStock": 16,
+      "currentWeight": 0.0
     }
   ]
 }
