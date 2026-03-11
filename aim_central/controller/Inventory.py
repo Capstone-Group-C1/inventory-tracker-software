@@ -25,6 +25,15 @@ class Controller():
 
             containerDetails = self.model.getContainerDetails(containerId)
             self.view.openContainerDetails(containerDetails)
+    
+    def toggleGPSWindow(self, curWindow):
+        self.view.toggleGPSWindow(curWindow)
+
+    def toggleCalibrateWindow(self, curWindow):
+        self.view.toggleCalibrateWindow(curWindow)
+    
+    def toggleHomeWindow(self, curWindow):
+        self.view.toggleHomeWindow(curWindow)
 
     def launch(self, model):
         print("Controller launched with model:", model)

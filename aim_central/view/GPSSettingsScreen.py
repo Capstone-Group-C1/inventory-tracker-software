@@ -34,19 +34,16 @@ class GPSSettingsWindow(QMainWindow):
             }
         """)
 
-        button_action = QAction("Home", self)
-        button_action.triggered.connect(lambda: self.hide())
+        self.button_action = QAction("Home", self)
 
-
-        button_action2 = QAction("Weight Calibration Settings", self)
-        # button_action2.triggered.connect(self.toolbar_button_clicked)
+        self.button_action2 = QAction("Weight Calibration Settings", self)
 
         menu = self.menuBar()
 
         file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(button_action)
+        file_menu.addAction(self.button_action)
         file_menu.addSeparator()
-        file_menu.addAction(button_action2)
+        file_menu.addAction(self.button_action2)
 
         layout1 = QVBoxLayout()
         layout1.addWidget(QLabel("GPS Settings"))
@@ -55,3 +52,9 @@ class GPSSettingsWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
+
+    def addFeatures(self, features):
+            self.features = features
+            self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
+            self.button_action2.triggered.connect(lambda: self.features.toggleCalibrateWindow(self))
+

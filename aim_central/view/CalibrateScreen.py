@@ -20,6 +20,7 @@ class CalibrateWindow(QMainWindow):
         self.resize(800, 600)
         self.container_buttons_list = []
         self.model = model # read only
+        self.features = None
 
         self.setStyleSheet("""
             QPushButton {
@@ -37,19 +38,15 @@ class CalibrateWindow(QMainWindow):
             }
         """)
 
-        button_action = QAction("Home", self)
-        button_action.triggered.connect(lambda: self.hide())
-
-
-        button_action2 = QAction("GPS Settings", self)
-        # button_action2.triggered.connect(self.toolbar_button_clicked)
+        self.button_action = QAction("Home", self)
+        self.button_action2 = QAction("GPS Settings", self)
 
         menu = self.menuBar()
 
         file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(button_action)
+        file_menu.addAction(self.button_action)
         file_menu.addSeparator()
-        file_menu.addAction(button_action2)
+        file_menu.addAction(self.button_action2)
 
         layout1 = QVBoxLayout()
         layout2 = QHBoxLayout()
@@ -72,3 +69,9 @@ class CalibrateWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
+
+    def addFeatures(self, features):
+        self.features = features
+        self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
+        self.button_action2.triggered.connect(lambda: self.features.toggleGPSWindow(self))
+

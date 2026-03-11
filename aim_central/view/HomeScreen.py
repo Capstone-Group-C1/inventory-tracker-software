@@ -35,19 +35,20 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
         self.container_buttons_list = []
         self.model = model # read only
+        self.features = None
 
         self.calibrateWindow = CalibrateWindow(model)
         self.GPSSettingsWindow = GPSSettingsWindow(model)
 
         button_action = QAction("GPS Settings", self)
         button_action.triggered.connect(
-            lambda: self.toggleWindow(self.GPSSettingsWindow)
+            lambda: self.toggleGPSWindow(self)
         )
 
 
         button_action2 = QAction("Weight Calibration Settings", self)
         button_action2.triggered.connect(
-            lambda: self.toggleWindow(self.calibrateWindow)
+            lambda: self.toggleCalibrateWindow(self)
         )
 
 
@@ -108,13 +109,25 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
 
-    def toggleWindow(self, window):
-        if window.isVisible():
-            window.hide()
-        else:
-            window.show()
+    def toggleGPSWindow(self, curWindow):
+        curWindow.hide()
+        self.GPSSettingsWindow.show()
+    
+    def toggleCalibrateWindow(self, curWindow):
+        curWindow.hide()
+        self.calibrateWindow.show()
+    
+    def toggleHomeWindow(self, curWindow):
+        curWindow.hide()
+        self.show()
+
 
     def addFeatures(self, features):
+        self.features = features
+
         for button in self.container_buttons_list:
             button.addFeatures(features)
+        
+        self.calibrateWindow.addFeatures(features)
+        self.GPSSettingsWindow.addFeatures(features)
         
