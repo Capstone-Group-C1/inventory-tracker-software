@@ -1,7 +1,6 @@
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QLabel,
     QMainWindow,
     QStatusBar,
