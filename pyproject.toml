@@ -12,25 +12,6 @@ requires-python = ">=3.10,<=3.13.5"
 readme = "README.md"
 license = {text = "MIT"}
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-]
-
 
 [tool.pdm]
 distribution = false
-
-[tool.pdm.scripts]
-start = "python aim_central/main.py"
-test = "pytest"
-test-cov = "pytest --cov=aim_central --cov-report=html"
-
-[tool.pytest.ini_options]
-testpaths = ["aim_central_tests"]
-python_files = ["test_*.py", "*_test.py", "Test*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v"
-
