@@ -1,5 +1,8 @@
 import sqlite3
 import os
+import smtplib
+import ssl
+from email.message import EmailMessage
 from aim_central.config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
@@ -135,6 +138,46 @@ def change_stock(container_id, change_amount):
         print(f"Database error: {e}")
         return False
 
+def export_to_email(receiver_email):
+    # --- 2. Email Configuration ---
+    # Set up your email credentials and recipient details
+    # It is highly recommended to use an App Password for Gmail/similar services
+    # You can generate one in your Google account settings:
+    # https://support.google.com
+    email_sender = 'your_email@gmail.com'
+    email_password = 'your_app_password' # Use an App Password here, not your main password
+
+    subject = 'Ambulance Inventory File Attached'
+    body = 'Please find the attached database file containing the ambulance inventory details.'
+
+    # --- 3. Create the Email Message and Attach the File ---
+    em = EmailMessage()
+    em['From'] = email_sender
+    em['To'] = receiver_email
+    em['Subject'] = subject
+    em.set_content(body)
+
+    # Attach the database file
+    with open(DB_PATH, 'rb') as db_file:
+        em.add_attachment(db_file.read(),
+                        maintype='application',
+                        subtype='octet-stream', # Generic type for a data file
+                        filename=os.path.basename(DB_PATH))
+
+    # --- 4. Send the Email via SMTP ---
+    # Add SSL (layer of security)
+    context = ssl.create_default_context()
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, email_password)
+            smtp.send_message(em)
+        print("Email sent successfully!")
+    except smtplib.SMTPException as e:
+        print(f"Error: Unable to send email. {e}")
+
+
+
 # Main Function to initialize database
-if __name__ == "__main__":
-    database_init()
+# if __name__ == "__main__":
+#     database_init()
