@@ -4,7 +4,7 @@
       "id": 0,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 2
+      "currentStock": 0
     },
     {
       "id": 1,
@@ -28,7 +28,7 @@
       "id": 4,
       "contents": "Oxygen Masks",
       "neededStock": 5,
-      "currentStock": 2
+      "currentStock": 0
     },
     {
       "id": 5,
