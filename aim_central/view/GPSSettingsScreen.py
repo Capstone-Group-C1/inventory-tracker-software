@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
     QVBoxLayout,
-    QPushButton
 )
+
 
 class GPSSettingsWindow(QMainWindow):
     def __init__(self, model):
