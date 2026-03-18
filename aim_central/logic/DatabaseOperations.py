@@ -140,8 +140,8 @@ def change_stock(container_id, change_amount):
 
 def export_to_email(receiver_email):
  
-    email_sender = 'your_email@gmail.com'
-    email_password = 'your_app_password' # generate app password through google account settings
+    email_sender = 'AmbulanceInventoryManagement@gmail.com'
+    email_password = 'crqc dqec cofx pibn' # generated app password through google account settings
 
     subject = 'Ambulance Inventory File Attached'
     body = 'Please find the attached database file containing the ambulance inventory details.'
@@ -166,9 +166,9 @@ def export_to_email(receiver_email):
         with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
             smtp.login(email_sender, email_password)
             smtp.send_message(em)
-        print("Email sent successfully!")
+        return "Email sent successfully!"
     except smtplib.SMTPException as e:
-        print(f"Error: Unable to send email. {e}")
+        return (f"Error: Unable to send email. {e}")
 
 
 

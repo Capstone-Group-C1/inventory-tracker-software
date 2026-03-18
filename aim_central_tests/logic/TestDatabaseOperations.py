@@ -297,6 +297,21 @@ class TestChangeStock:
             updated_stock = DatabaseOperations.get_stock(1)
             assert updated_stock == 70  # 50 + 10 + 15 - 5
 
+# ============================================================================
+# Tests for export_to_email()
+# ============================================================================
+
+class TestExportToEmail:
+    """Test suite for export_to_email function."""
+    
+    def test_export_to_email(self, sample_data):
+        """Test that export_to_email sends an email with the database file attached."""
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.export_to_email("alindquist540@gmail.com")
+            assert result == "Email sent successfully!" # or result.startswith("Error: Unable to send email.")
+            result2 = DatabaseOperations.export_to_email("invalid_email")
+            assert result2.startswith("Error: Unable to send email.")
+
 
 # ============================================================================
 # Integration Tests
