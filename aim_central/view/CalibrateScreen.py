@@ -1,7 +1,6 @@
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow,
-    QStatusBar,
     QToolBar,
     QWidget,    
     QHBoxLayout,
