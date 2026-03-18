@@ -152,6 +152,21 @@ class TestGetItemId:
             assert item_id is None
 
 
+class TestGetItemWeight:
+    """Test suite for get_item_weight function."""
+
+    def test_get_item_weight_returns_value(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            # Resistor row in fixture has weight 0.001
+            item_weight = DatabaseOperations.get_item_weight(1)
+            assert item_weight == 0.001
+
+    def test_get_item_weight_returns_none_for_nonexistent_container(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            item_weight = DatabaseOperations.get_item_weight(999)
+            assert item_weight is None
+
+
 # ============================================================================
 # Tests for find_container()
 # ============================================================================
@@ -296,6 +311,28 @@ class TestChangeStock:
             
             updated_stock = DatabaseOperations.get_stock(1)
             assert updated_stock == 70  # 50 + 10 + 15 - 5
+
+
+class TestWeightBasedUpdates:
+    """Test suite for absolute stock updates from measured weight."""
+
+    def test_set_stock_updates_absolute_value(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.set_stock(1, 77)
+            assert result is True
+            assert DatabaseOperations.get_stock(1) == 77
+
+    def test_update_stock_from_weight(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            # item_weight for container 1 is 0.001, so 0.05 g -> 50 units
+            result = DatabaseOperations.update_stock_from_weight(1, 0.05)
+            assert result is True
+            assert DatabaseOperations.get_stock(1) == 50
+
+    def test_update_stock_from_weight_rejects_negative_weight(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.update_stock_from_weight(1, -1)
+            assert result is False
 
 
 # ============================================================================

@@ -63,6 +63,31 @@ def get_item_id(container_id):
     except sqlite3.OperationalError as e:
         print(e)
 
+
+def get_item_weight(container_id):
+    """
+    Get the configured item weight for a container.
+
+    Returns None when the container is not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT i.item_weight
+                FROM containers c
+                JOIN items i ON c.item_id = i.item_id
+                WHERE c.container_id = ?""",
+                (container_id,),
+            )
+            row = cur.fetchone()
+            if row:
+                return float(row[0])
+            return None
+    except sqlite3.OperationalError as e:
+        print(e)
+        return None
+
 def find_container(container_id):
     """
     Find a container in the database by its ID.
@@ -134,6 +159,56 @@ def change_stock(container_id, change_amount):
     except sqlite3.OperationalError as e:
         print(f"Database error: {e}")
         return False
+
+
+def set_stock(container_id, stock_count):
+    """
+    Sets stock to an absolute value.
+    """
+    if stock_count < 0:
+        print("Error: Stock cannot be negative.")
+        return False
+
+    container = find_container(container_id)
+    if container is None:
+        print(f"Error: Container with ID {container_id} not found.")
+        return False
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                'UPDATE containers SET current_stock = ? WHERE container_id = ?',
+                (int(stock_count), container_id)
+            )
+            conn.commit()
+            return True
+    except sqlite3.OperationalError as e:
+        print(f"Database error: {e}")
+        return False
+
+
+def update_stock_from_weight(container_id, measured_weight_g):
+    """
+    Converts measured weight (grams) into item count, then updates stock.
+
+    Assumption: item_weight stored in DB is grams per unit.
+    """
+    if measured_weight_g < 0:
+        print("Error: measured_weight_g cannot be negative.")
+        return False
+
+    item_weight_g = get_item_weight(container_id)
+    if item_weight_g is None:
+        print(f"Error: No item configured for container ID {container_id}.")
+        return False
+
+    if item_weight_g <= 0:
+        print(f"Error: Invalid item weight ({item_weight_g}) for container ID {container_id}.")
+        return False
+
+    calculated_stock = int(round(measured_weight_g / item_weight_g))
+    return set_stock(container_id, calculated_stock)
 
 # Main Function to initialize database
 if __name__ == "__main__":
