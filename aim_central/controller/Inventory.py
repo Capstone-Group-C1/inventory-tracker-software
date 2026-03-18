@@ -14,14 +14,26 @@ class Controller():
             print("Current Stock: ", stockAmt)
             print("Stock Level: ", stockLevel)
 
-            self.model.changeStock(containerId, -1)
+            # self.model.changeStock(containerId, -1)
             
-            updatedStockAmt = self.model.getStock(containerId)
-            print("Updated Stock Amount: ", updatedStockAmt)
-            updatedStockLevel = self.model.getStockLevel(containerId)
-            print("Updated Stock Level: ", updatedStockLevel)
+            # updatedStockAmt = self.model.getStock(containerId)
+            # print("Updated Stock Amount: ", updatedStockAmt)
+            # updatedStockLevel = self.model.getStockLevel(containerId)
+            # print("Updated Stock Level: ", updatedStockLevel)
 
-            self.view.updateContainerDisplay(containerId, updatedStockLevel)
+            # self.view.updateContainerDisplay(containerId, updatedStockLevel)
+
+            containerDetails = self.model.getContainerDetails(containerId)
+            self.view.openContainerDetails(containerDetails)
+    
+    def toggleGPSWindow(self, curWindow):
+        self.view.toggleGPSWindow(curWindow)
+
+    def toggleCalibrateWindow(self, curWindow):
+        self.view.toggleCalibrateWindow(curWindow)
+    
+    def toggleHomeWindow(self, curWindow):
+        self.view.toggleHomeWindow(curWindow)
 
     def launch(self, model):
         print("Controller launched with model:", model)

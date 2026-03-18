@@ -37,3 +37,15 @@ class CentralSystem():
                 container["currentStock"] += changeAmount
                 with open(file_path, "w") as f:
                     json.dump(self.inv, f, indent=2)
+    
+    def getContainerDetails(self, containerId):
+        container = self.findContainer(containerId)
+        if container:
+            return {
+                "id": container["id"],
+                "contents": container["contents"],
+                "neededStock": container["neededStock"],
+                "currentStock": container["currentStock"],
+                "currentWeight": container["currentWeight"]
+            }
+        return None

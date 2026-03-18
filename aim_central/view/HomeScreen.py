@@ -14,7 +14,9 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QColor, QPalette
 from view.ContainerButton import ContainerButton
-from controller.Inventory import Controller
+from view.ContainerDialog import CustomDialog
+from view.CalibrateScreen import CalibrateWindow
+from view.GPSSettingsScreen import GPSSettingsWindow 
 
 
 class Color(QWidget):
@@ -27,25 +29,35 @@ class Color(QWidget):
         self.setPalette(palette)
 
 class MainWindow(QMainWindow):
-    def __init__(self, controller):
+    def __init__(self, model):
         super().__init__()
         self.setWindowTitle("Ambulance Inventory Tracker")
         self.resize(800, 600)
         self.container_buttons_list = []
+        self.model = model # read only
+        self.features = None
+
+        self.calibrateWindow = CalibrateWindow(model)
+        self.GPSSettingsWindow = GPSSettingsWindow(model)
 
         button_action = QAction("GPS Settings", self)
-        # button_action.triggered.connect(self.toolbar_button_clicked)
+        button_action.triggered.connect(
+            lambda: self.toggleGPSWindow(self)
+        )
 
 
         button_action2 = QAction("Weight Calibration Settings", self)
-        # button_action2.triggered.connect(self.toolbar_button_clicked)
+        button_action2.triggered.connect(
+            lambda: self.toggleCalibrateWindow(self)
+        )
+
 
         menu = self.menuBar()
 
         file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(button_action)
-        file_menu.addSeparator()
         file_menu.addAction(button_action2)
+        file_menu.addSeparator()
+        file_menu.addAction(button_action)
 
         layout1 = QVBoxLayout()
         layout2 = QHBoxLayout()
@@ -92,7 +104,30 @@ class MainWindow(QMainWindow):
             }}
         """)
 
+    def openContainerDetails(self, container_details):
+        dialog = CustomDialog(container_details, self)
+        dialog.exec()
+
+
+    def toggleGPSWindow(self, curWindow):
+        curWindow.hide()
+        self.GPSSettingsWindow.show()
+    
+    def toggleCalibrateWindow(self, curWindow):
+        curWindow.hide()
+        self.calibrateWindow.show()
+    
+    def toggleHomeWindow(self, curWindow):
+        curWindow.hide()
+        self.show()
+
+
     def addFeatures(self, features):
+        self.features = features
+
         for button in self.container_buttons_list:
             button.addFeatures(features)
+        
+        self.calibrateWindow.addFeatures(features)
+        self.GPSSettingsWindow.addFeatures(features)
         
