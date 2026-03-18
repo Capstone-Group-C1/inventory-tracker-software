@@ -3,7 +3,6 @@ from PyQt6.QtWidgets import (
     QApplication,
     QLabel,
     QMainWindow,
-    QToolBar,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
