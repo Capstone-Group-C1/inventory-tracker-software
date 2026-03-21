@@ -2,6 +2,7 @@ import sqlite3
 import os
 import smtplib
 import ssl
+import pandas as pd
 from email.message import EmailMessage
 from aim_central.config.config import AIMConfig
 
@@ -152,12 +153,31 @@ def export_to_email(receiver_email):
     em['Subject'] = subject
     em.set_content(body)
 
+    df = pd.DataFrame() # create empty dataframe to hold query results
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+
+            query = """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock 
+                    FROM containers c
+                    JOIN items i ON c.item_id = i.item_id"""
+
+            df = pd.read_sql_query(query, conn)
+            return True
+    except sqlite3.OperationalError as e:
+        print(f"Database error: {e}")
+        return False
+
+    df.to_csv('inventory_export.csv', index=False) # export to CSV
+
+
     # Attach the database file
-    with open(DB_PATH, 'rb') as db_file:
-        em.add_attachment(db_file.read(),
+    with open('inventory_export.csv', 'rb') as csv_file:
+        em.add_attachment(csv_file.read(),
                         maintype='application',
                         subtype='octet-stream', # generic type for a data file
-                        filename=os.path.basename(DB_PATH))
+                        filename=os.path.basename('inventory_export.csv'))
 
     # add SSL (layer of security)
     context = ssl.create_default_context()
@@ -171,6 +191,41 @@ def export_to_email(receiver_email):
         return (f"Error: Unable to send email. {e}")
 
 
+def import_from_csv(csv_file_path):
+    """
+    Imports inventory data from a CSV file and updates the database.
+    The CSV file should have columns: container_id, item_name, needed_stock, current_stock
+    """
+    try:
+        df = pd.read_csv(csv_file_path)
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            for _, row in df.iterrows():
+                # Check if item exists, if not insert it
+                cur.execute('SELECT item_id FROM items WHERE item_name = ?', (row['item_name'],))
+                item = cur.fetchone()
+                if item:
+                    item_id = item[0]
+                else:
+                    cur.execute('INSERT INTO items (item_name) VALUES (?)', (row['item_name'],))
+                    item_id = cur.lastrowid
+                
+                # Update or insert container
+                cur.execute('SELECT container_id FROM containers WHERE container_id = ?', (row['container_id'],))
+                container = cur.fetchone()
+                if container:
+                    cur.execute('''UPDATE containers 
+                                   SET item_id = ?, needed_stock = ?, current_stock = ? 
+                                   WHERE container_id = ?''', 
+                                (item_id, row['needed_stock'], row['current_stock'], row['container_id']))
+                else:
+                    cur.execute('''INSERT INTO containers (container_id, item_id, needed_stock, current_stock) 
+                                   VALUES (?, ?, ?, ?)''', 
+                                (row['container_id'], item_id, row['needed_stock'], row['current_stock']))
+            conn.commit()
+        return "Import successful!"
+    except Exception as e:
+        return f"Error during import: {e}"
 
 # Main Function to initialize database
 # if __name__ == "__main__":
