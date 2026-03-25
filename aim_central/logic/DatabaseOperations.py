@@ -27,6 +27,30 @@ def database_init():
             needed_stock INTEGER NOT NULL DEFAULT 0,
             current_stock INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (item_id) REFERENCES items(item_id)
+        );""",
+
+        # Per-container calibration parameters for converting raw sensor weight.
+        """CREATE TABLE IF NOT EXISTS container_calibration (
+            container_id INTEGER PRIMARY KEY,
+            empty_bin_weight_g REAL NOT NULL DEFAULT 0.0,
+            scale_factor REAL NOT NULL DEFAULT 1.0,
+            min_detectable_weight_g REAL NOT NULL DEFAULT 0.0,
+            rounding_mode TEXT NOT NULL DEFAULT 'round',
+            FOREIGN KEY (container_id) REFERENCES containers(container_id)
+        );""",
+
+        # Time-series history for troubleshooting and analytics.
+        """CREATE TABLE IF NOT EXISTS sensor_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            container_id INTEGER NOT NULL,
+            raw_weight_g REAL NOT NULL,
+            net_weight_g REAL,
+            computed_stock INTEGER,
+            sensor_status TEXT NOT NULL,
+            decision TEXT NOT NULL,
+            note TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (container_id) REFERENCES containers(container_id)
         );"""
     ]
 
@@ -134,6 +158,50 @@ def get_stock(container_id):
         return container["current_stock"]
     return -1
 
+def get_item_weight(container_id):
+    """
+    Returns the weight per unit (grams) for the item assigned to a container,
+    or None if the container/item is not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT i.item_weight FROM items i
+                JOIN containers c ON c.item_id = i.item_id
+                WHERE c.container_id = ?""",
+                (container_id,),
+            )
+            row = cur.fetchone()
+            if row:
+                return row[0]
+            return None
+    except sqlite3.OperationalError as e:
+        print(e)
+        return None
+
+
+def set_stock(container_id, new_stock):
+    """
+    Sets the current_stock of a container to an absolute value.
+    """
+    if new_stock < 0:
+        print("Error: Attempting to set stock below zero.")
+        return False
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE containers SET current_stock = ? WHERE container_id = ?",
+                (new_stock, container_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+    except sqlite3.OperationalError as e:
+        print(f"Database error: {e}")
+        return False
+
+
 def change_stock(container_id, change_amount):
     """
     Adjusts stock of a container by change_amount.
@@ -188,6 +256,121 @@ def set_stock(container_id, stock_count):
         return False
 
 
+def get_container_calibration(container_id):
+    """
+    Get per-container calibration values.
+
+    Returns defaults when no calibration row exists.
+    """
+    defaults = {
+        "empty_bin_weight_g": 0.0,
+        "scale_factor": 1.0,
+        "min_detectable_weight_g": 0.0,
+        "rounding_mode": "round",
+    }
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT empty_bin_weight_g, scale_factor, min_detectable_weight_g, rounding_mode
+                FROM container_calibration
+                WHERE container_id = ?""",
+                (container_id,),
+            )
+            row = cur.fetchone()
+            if row:
+                return dict(row)
+            return defaults
+    except sqlite3.OperationalError:
+        # Keep compatibility with databases created before calibration table existed.
+        return defaults
+
+
+def upsert_container_calibration(
+    container_id,
+    empty_bin_weight_g=0.0,
+    scale_factor=1.0,
+    min_detectable_weight_g=0.0,
+    rounding_mode="round",
+):
+    """
+    Insert or update per-container calibration values.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO container_calibration (
+                    container_id,
+                    empty_bin_weight_g,
+                    scale_factor,
+                    min_detectable_weight_g,
+                    rounding_mode
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(container_id) DO UPDATE SET
+                    empty_bin_weight_g = excluded.empty_bin_weight_g,
+                    scale_factor = excluded.scale_factor,
+                    min_detectable_weight_g = excluded.min_detectable_weight_g,
+                    rounding_mode = excluded.rounding_mode""",
+                (
+                    container_id,
+                    float(empty_bin_weight_g),
+                    float(scale_factor),
+                    float(min_detectable_weight_g),
+                    rounding_mode,
+                ),
+            )
+            conn.commit()
+            return True
+    except sqlite3.OperationalError as e:
+        print(f"Database error: {e}")
+        return False
+
+
+def record_sensor_event(
+    container_id,
+    raw_weight_g,
+    sensor_status,
+    decision,
+    net_weight_g=None,
+    computed_stock=None,
+    note=None,
+):
+    """
+    Record a sensor processing event for observability.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO sensor_events (
+                    container_id,
+                    raw_weight_g,
+                    net_weight_g,
+                    computed_stock,
+                    sensor_status,
+                    decision,
+                    note
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    container_id,
+                    float(raw_weight_g),
+                    None if net_weight_g is None else float(net_weight_g),
+                    computed_stock,
+                    sensor_status,
+                    decision,
+                    note,
+                ),
+            )
+            conn.commit()
+            return True
+    except sqlite3.OperationalError:
+        # Keep compatibility with databases created before sensor_events table existed.
+        return False
+
+
 def update_stock_from_weight(container_id, measured_weight_g):
     """
     Converts measured weight (grams) into item count, then updates stock.
@@ -207,7 +390,28 @@ def update_stock_from_weight(container_id, measured_weight_g):
         print(f"Error: Invalid item weight ({item_weight_g}) for container ID {container_id}.")
         return False
 
-    calculated_stock = int(round(measured_weight_g / item_weight_g))
+    calibration = get_container_calibration(container_id)
+    empty_bin_weight_g = float(calibration["empty_bin_weight_g"])
+    scale_factor = float(calibration["scale_factor"])
+    min_detectable_weight_g = float(calibration["min_detectable_weight_g"])
+    rounding_mode = calibration["rounding_mode"]
+
+    if scale_factor <= 0:
+        print(f"Error: Invalid scale_factor ({scale_factor}) for container ID {container_id}.")
+        return False
+
+    net_weight_g = max(0.0, (measured_weight_g - empty_bin_weight_g) * scale_factor)
+    if net_weight_g < min_detectable_weight_g:
+        net_weight_g = 0.0
+
+    ratio = net_weight_g / item_weight_g
+    if rounding_mode == "floor":
+        calculated_stock = int(ratio)
+    elif rounding_mode == "ceil":
+        calculated_stock = int(ratio) if ratio == int(ratio) else int(ratio) + 1
+    else:
+        calculated_stock = int(round(ratio))
+
     return set_stock(container_id, calculated_stock)
 
 # Main Function to initialize database

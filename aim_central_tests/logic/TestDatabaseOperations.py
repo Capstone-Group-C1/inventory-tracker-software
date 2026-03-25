@@ -98,6 +98,14 @@ class TestDatabaseInit:
                 # Check if containers table exists
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='containers'")
                 assert cursor.fetchone() is not None, "containers table was not created"
+
+                # Check if calibration table exists
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='container_calibration'")
+                assert cursor.fetchone() is not None, "container_calibration table was not created"
+
+                # Check if events table exists
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sensor_events'")
+                assert cursor.fetchone() is not None, "sensor_events table was not created"
     
     def test_items_table_schema(self, test_db):
         """Test that items table has the correct schema."""
@@ -333,6 +341,187 @@ class TestWeightBasedUpdates:
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
             result = DatabaseOperations.update_stock_from_weight(1, -1)
             assert result is False
+
+    pass
+
+
+class TestCalibrationAndEvents:
+    def test_get_container_calibration_defaults(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            cfg = DatabaseOperations.get_container_calibration(1)
+            assert cfg["empty_bin_weight_g"] == 0.0
+            assert cfg["scale_factor"] == 1.0
+            assert cfg["min_detectable_weight_g"] == 0.0
+            assert cfg["rounding_mode"] == "round"
+
+    def test_upsert_container_calibration_and_read_back(self, test_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', test_db):
+            DatabaseOperations.database_init()
+
+            with sqlite3.connect(test_db) as conn:
+                cur = conn.cursor()
+                cur.execute("INSERT INTO items (item_name, item_weight) VALUES (?, ?)", ("Nut", 0.001))
+                cur.execute("INSERT INTO containers (container_id, item_id, needed_stock, current_stock) VALUES (?, ?, ?, ?)", (5, 1, 10, 0))
+                conn.commit()
+
+            assert DatabaseOperations.upsert_container_calibration(5, 10.0, 1.2, 0.5, "floor") is True
+            cfg = DatabaseOperations.get_container_calibration(5)
+            assert cfg["empty_bin_weight_g"] == 10.0
+            assert cfg["scale_factor"] == 1.2
+            assert cfg["min_detectable_weight_g"] == 0.5
+            assert cfg["rounding_mode"] == "floor"
+
+    def test_record_sensor_event(self, test_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', test_db):
+            DatabaseOperations.database_init()
+
+            with sqlite3.connect(test_db) as conn:
+                cur = conn.cursor()
+                cur.execute("INSERT INTO items (item_name, item_weight) VALUES (?, ?)", ("Washer", 0.001))
+                cur.execute("INSERT INTO containers (container_id, item_id, needed_stock, current_stock) VALUES (?, ?, ?, ?)", (7, 1, 10, 0))
+                conn.commit()
+
+            ok = DatabaseOperations.record_sensor_event(
+                container_id=7,
+                raw_weight_g=4.0,
+                net_weight_g=3.8,
+                computed_stock=4,
+                sensor_status="ok",
+                decision="accepted",
+                note="unit test",
+            )
+            assert ok is True
+
+            with sqlite3.connect(test_db) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT decision, computed_stock FROM sensor_events WHERE container_id = ?", (7,))
+                row = cur.fetchone()
+                assert row is not None
+                assert row[0] == "accepted"
+                assert row[1] == 4
+
+
+# ============================================================================
+# Tests for get_item_weight()
+# ============================================================================
+
+class TestGetItemWeight:
+    def test_returns_correct_weight(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            # Container 1 holds Resistor with item_weight=0.001
+            weight = DatabaseOperations.get_item_weight(1)
+            assert weight == 0.001
+
+    def test_returns_none_for_nonexistent_container(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            weight = DatabaseOperations.get_item_weight(999)
+            assert weight is None
+
+
+# ============================================================================
+# Tests for set_stock()
+# ============================================================================
+
+class TestSetStock:
+    def test_sets_stock_to_absolute_value(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.set_stock(1, 75)
+            assert result is True
+            assert DatabaseOperations.get_stock(1) == 75
+
+    def test_set_stock_to_zero(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.set_stock(1, 0)
+            assert result is True
+            assert DatabaseOperations.get_stock(1) == 0
+
+    def test_set_stock_rejects_negative(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.set_stock(1, -5)
+            assert result is False
+            assert DatabaseOperations.get_stock(1) == 50  # unchanged
+
+    def test_set_stock_returns_false_for_nonexistent_container(self, sample_data):
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.set_stock(999, 10)
+            assert result is False
+
+
+# ============================================================================
+# Tests for update_stock_from_weight()
+# ============================================================================
+
+class TestUpdateStockFromWeight:
+
+    @pytest.fixture
+    def weight_db(self, test_db):
+        """DB with one item and one container, calibration tables initialised."""
+        with patch.object(DatabaseOperations, 'DB_PATH', test_db):
+            DatabaseOperations.database_init()
+            with sqlite3.connect(test_db) as conn:
+                cur = conn.cursor()
+                cur.execute("INSERT INTO items (item_name, item_weight) VALUES (?, ?)", ("Screw", 0.001))
+                cur.execute("INSERT INTO containers (container_id, item_id, needed_stock, current_stock) VALUES (?, ?, ?, ?)", (1, 1, 100, 0))
+                conn.commit()
+        yield test_db
+
+    def test_basic_conversion_with_empty_bin_tare(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            DatabaseOperations.upsert_container_calibration(
+                container_id=1, empty_bin_weight_g=0.01, scale_factor=1.0,
+                min_detectable_weight_g=0.0, rounding_mode="round",
+            )
+            # raw 0.05g - 0.01g tare = 0.04g net / 0.001g per item = 40 items
+            assert DatabaseOperations.update_stock_from_weight(1, 0.05) is True
+            assert DatabaseOperations.get_stock(1) == 40
+
+    def test_rounding_mode_floor(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            DatabaseOperations.upsert_container_calibration(
+                container_id=1, empty_bin_weight_g=0.0, scale_factor=1.0,
+                min_detectable_weight_g=0.0, rounding_mode="floor",
+            )
+            # 0.0035g / 0.001g = 3.5 → floor → 3
+            assert DatabaseOperations.update_stock_from_weight(1, 0.0035) is True
+            assert DatabaseOperations.get_stock(1) == 3
+
+    def test_rounding_mode_ceil(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            DatabaseOperations.upsert_container_calibration(
+                container_id=1, empty_bin_weight_g=0.0, scale_factor=1.0,
+                min_detectable_weight_g=0.0, rounding_mode="ceil",
+            )
+            # 0.0035g / 0.001g = 3.5 → ceil → 4
+            assert DatabaseOperations.update_stock_from_weight(1, 0.0035) is True
+            assert DatabaseOperations.get_stock(1) == 4
+
+    def test_min_detectable_weight_clamps_to_zero(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            DatabaseOperations.upsert_container_calibration(
+                container_id=1, empty_bin_weight_g=0.0, scale_factor=1.0,
+                min_detectable_weight_g=0.005, rounding_mode="round",
+            )
+            # net 0.003g is below min_detectable 0.005g → clamped to 0 → 0 items
+            assert DatabaseOperations.update_stock_from_weight(1, 0.003) is True
+            assert DatabaseOperations.get_stock(1) == 0
+
+    def test_scale_factor_applied(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            DatabaseOperations.upsert_container_calibration(
+                container_id=1, empty_bin_weight_g=0.0, scale_factor=2.0,
+                min_detectable_weight_g=0.0, rounding_mode="round",
+            )
+            # 0.002g * scale_factor 2.0 = 0.004g net / 0.001g = 4 items
+            assert DatabaseOperations.update_stock_from_weight(1, 0.002) is True
+            assert DatabaseOperations.get_stock(1) == 4
+
+    def test_negative_weight_rejected(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            assert DatabaseOperations.update_stock_from_weight(1, -1.0) is False
+
+    def test_missing_container_rejected(self, weight_db):
+        with patch.object(DatabaseOperations, 'DB_PATH', weight_db):
+            assert DatabaseOperations.update_stock_from_weight(999, 1.0) is False
 
 
 # ============================================================================
