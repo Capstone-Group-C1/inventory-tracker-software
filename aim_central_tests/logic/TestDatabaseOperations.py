@@ -342,7 +342,6 @@ class TestWeightBasedUpdates:
             result = DatabaseOperations.update_stock_from_weight(1, -1)
             assert result is False
 
-    pass
 
 
 class TestCalibrationAndEvents:
