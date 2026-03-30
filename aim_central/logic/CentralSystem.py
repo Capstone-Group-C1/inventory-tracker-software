@@ -1,51 +1,36 @@
 import json
 import os
 
+from aim_central.logic import DatabaseOperations as db_ops
+
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(script_dir, "testInventory.json")
 
 class CentralSystem():
     def __init__(self):
-        self.inv = json.load(open(file_path))
+        db_ops.database_init()
 
     def findContainer(self, containerId):
-        for container in self.inv["containers"]:
-            if container["id"] == containerId:
-                return container
-    
+        return db_ops.find_container(containerId)
+
     def getStockLevel(self, containerId):
-        container = self.findContainer(containerId)
-        if container:
-            if container["currentStock"] == 0:
-                return "Red"
-            elif container["currentStock"] <= container["neededStock"] * 0.5:
-                return "Yellow"
-        return "Green"
+        return db_ops.get_stock_level(containerId)
     
     def getStock(self, containerId):
-        container = self.findContainer(containerId)
-        if container:
-            return container["currentStock"]
-        return -1
+        return db_ops.get_stock(containerId)
     
     def changeStock(self, containerId, changeAmount):
-        container = self.findContainer(containerId)
-        if container:
-            if container["currentStock"] + changeAmount < 0:
-                print("Error: Attempting to set stock below zero.")
-            else:
-                container["currentStock"] += changeAmount
-                with open(file_path, "w") as f:
-                    json.dump(self.inv, f, indent=2)
+        return db_ops.change_stock(containerId, changeAmount)
     
     def getContainerDetails(self, containerId):
         container = self.findContainer(containerId)
         if container:
             return {
-                "id": container["id"],
-                "contents": container["contents"],
-                "neededStock": container["neededStock"],
-                "currentStock": container["currentStock"],
-                "currentWeight": container["currentWeight"]
+                "id": container["container_id"],
+                "contents": container["item_name"],
+                "neededStock": container["needed_stock"],
+                "currentStock": container["current_stock"],
+                "currentWeight": "N/A"
             }
         return None

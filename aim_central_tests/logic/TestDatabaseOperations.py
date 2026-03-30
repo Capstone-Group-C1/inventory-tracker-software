@@ -76,6 +76,21 @@ def sample_data(test_db):
         yield test_db
 
 
+@pytest.fixture
+def sample_csv(tmp_path):
+    """
+    Fixture to create a sample CSV file for import testing.
+    """
+    csv_path = str(tmp_path / "sample_import.csv")
+    
+    with open(csv_path, 'w') as f:
+        f.write("item_name,container_id,needed_stock,current_stock\n")
+        f.write("Transistor,1,200,150\n")
+        f.write("Diode,2,300,250\n")
+    
+    yield csv_path
+
+
 # ============================================================================
 # Tests for database_init()
 # ============================================================================
@@ -319,6 +334,29 @@ class TestChangeStock:
             
             updated_stock = DatabaseOperations.get_stock(1)
             assert updated_stock == 70  # 50 + 10 + 15 - 5
+
+# ============================================================================
+# Tests for export_to_email()
+# ============================================================================
+
+class TestExportToEmail:
+    """Test suite for export_to_email function."""
+    
+    def test_export_to_email(self, sample_data):
+        """Test that export_to_email sends an email with the database file attached."""
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
+            result = DatabaseOperations.export_to_email("alindquist540@gmail.com")
+            assert result == "Email sent successfully!" 
+            result2 = DatabaseOperations.export_to_email("invalid_email")
+            assert result2.startswith("Error: Unable to send email.")
+    
+    def test_import_from_csv(self, sample_csv):
+        """Test that import_from_csv correctly imports data from a CSV file."""
+        with patch.object(DatabaseOperations, 'DB_PATH', sample_csv):
+            result = DatabaseOperations.import_from_csv(sample_csv)
+            assert result == "Import successful!" 
+            result2 = DatabaseOperations.import_from_csv("nonexistent_file.csv")
+            assert result2.startswith("Unable to import data.")
 
 
 class TestWeightBasedUpdates:

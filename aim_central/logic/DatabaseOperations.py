@@ -1,5 +1,9 @@
 import sqlite3
 import os
+import smtplib
+import ssl
+import pandas as pd
+from email.message import EmailMessage
 from aim_central.config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
@@ -125,7 +129,7 @@ def find_container(container_id):
             cur = conn.cursor()
             # JOIN connects two tables based on a common column to get item name from items table and container details
             cur.execute(
-                """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock 
+                """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
                 FROM containers c
                 JOIN items i ON c.item_id = i.item_id
                 WHERE c.container_id = ?""", (container_id,))
@@ -158,28 +162,6 @@ def get_stock(container_id):
         return container["current_stock"]
     return -1
 
-def get_item_weight(container_id):
-    """
-    Returns the weight per unit (grams) for the item assigned to a container,
-    or None if the container/item is not found.
-    """
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT i.item_weight FROM items i
-                JOIN containers c ON c.item_id = i.item_id
-                WHERE c.container_id = ?""",
-                (container_id,),
-            )
-            row = cur.fetchone()
-            if row:
-                return row[0]
-            return None
-    except sqlite3.OperationalError as e:
-        print(e)
-        return None
-
 
 def set_stock(container_id, new_stock):
     """
@@ -210,12 +192,12 @@ def change_stock(container_id, change_amount):
     if container is None:
         print(f"Error: Container with ID {container_id} not found.")
         return False
-    
+
     new_stock = container["current_stock"] + change_amount
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
         return False
-    
+
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
@@ -229,31 +211,89 @@ def change_stock(container_id, change_amount):
         return False
 
 
-def set_stock(container_id, stock_count):
-    """
-    Sets stock to an absolute value.
-    """
-    if stock_count < 0:
-        print("Error: Stock cannot be negative.")
-        return False
+def export_to_email(receiver_email):
+    email_sender = 'AmbulanceInventoryManagement@gmail.com'
+    email_password = os.getenv('AIM_EMAIL_PASSWORD', '')
 
-    container = find_container(container_id)
-    if container is None:
-        print(f"Error: Container with ID {container_id} not found.")
-        return False
+    subject = 'Ambulance Inventory File Attached'
+    body = 'Please find the attached database file containing the ambulance inventory details.'
+
+    em = EmailMessage()
+    em['From'] = email_sender
+    em['To'] = receiver_email
+    em['Subject'] = subject
+    em.set_content(body)
+
+    df = pd.DataFrame() # create empty dataframe to hold query results
 
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                'UPDATE containers SET current_stock = ? WHERE container_id = ?',
-                (int(stock_count), container_id)
-            )
-            conn.commit()
-            return True
+
+            query = """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
+                    FROM containers c
+                    JOIN items i ON c.item_id = i.item_id"""
+
+            df = pd.read_sql_query(query, conn)
     except sqlite3.OperationalError as e:
         print(f"Database error: {e}")
         return False
+
+    df.to_csv('inventory_export.csv', index=False) # export to CSV
+
+    # Attach the database file
+    with open('inventory_export.csv', 'rb') as csv_file:
+        em.add_attachment(csv_file.read(),
+                        maintype='application',
+                        subtype='octet-stream', # generic type for a data file
+                        filename=os.path.basename('inventory_export.csv'))
+
+    # add SSL (layer of security)
+    context = ssl.create_default_context()
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, email_password)
+            smtp.send_message(em)
+        return "Email sent successfully!"
+    except smtplib.SMTPException as e:
+        return (f"Error: Unable to send email. {e}")
+
+
+def import_from_csv(csv_file_path):
+    """
+    Imports inventory data from a CSV file and updates the database.
+    The CSV file should have columns: container_id, item_name, needed_stock, current_stock
+    """
+    try:
+        df = pd.read_csv(csv_file_path)
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            for _, row in df.iterrows():
+                # Check if item exists, if not insert it
+                cur.execute('SELECT item_id FROM items WHERE item_name = ?', (row['item_name'],))
+                item = cur.fetchone()
+                if item:
+                    item_id = item[0]
+                else:
+                    cur.execute('INSERT INTO items (item_name) VALUES (?)', (row['item_name'],))
+                    item_id = cur.lastrowid
+
+                # Update or insert container
+                cur.execute('SELECT container_id FROM containers WHERE container_id = ?', (row['container_id'],))
+                container = cur.fetchone()
+                if container:
+                    cur.execute('''UPDATE containers
+                                   SET item_id = ?, needed_stock = ?, current_stock = ?
+                                   WHERE container_id = ?''',
+                                (item_id, row['needed_stock'], row['current_stock'], row['container_id']))
+                else:
+                    cur.execute('''INSERT INTO containers (container_id, item_id, needed_stock, current_stock)
+                                   VALUES (?, ?, ?, ?)''',
+                                (row['container_id'], item_id, row['needed_stock'], row['current_stock']))
+            conn.commit()
+        return "Import successful!"
+    except Exception as e:
+        return "Unable to import data."
 
 
 def get_container_calibration(container_id):
@@ -415,5 +455,5 @@ def update_stock_from_weight(container_id, measured_weight_g):
     return set_stock(container_id, calculated_stock)
 
 # Main Function to initialize database
-if __name__ == "__main__":
-    database_init()
+# if __name__ == "__main__":
+#     database_init()
