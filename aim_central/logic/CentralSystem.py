@@ -10,13 +10,9 @@ file_path = os.path.join(script_dir, "testInventory.json")
 class CentralSystem():
     def __init__(self):
         db_ops.database_init()
-        #self.inv = json.load(open(file_path))
 
     def findContainer(self, containerId):
         return db_ops.find_container(containerId)
-        # for container in self.inv["containers"]:
-        #     if container["id"] == containerId:
-        #         return container
 
     def getStockLevel(self, containerId):
         return db_ops.get_stock_level(containerId)

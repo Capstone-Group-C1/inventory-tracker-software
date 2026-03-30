@@ -225,7 +225,7 @@ def import_from_csv(csv_file_path):
             conn.commit()
         return "Import successful!"
     except Exception as e:
-        return f"Error during import: {e}"
+        return "Unable to import data."
 
 # Main Function to initialize database
 # if __name__ == "__main__":
