@@ -1,7 +1,7 @@
 import json
 import os
 
-import DatabaseOperations as db_ops
+from aim_central.logic import DatabaseOperations as db_ops
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,10 +27,10 @@ class CentralSystem():
         container = self.findContainer(containerId)
         if container:
             return {
-                "id": container["id"],
-                "contents": container["contents"],
-                "neededStock": container["neededStock"],
-                "currentStock": container["currentStock"],
-                "currentWeight": container["currentWeight"]
+                "id": container["container_id"],
+                "contents": container["item_name"],
+                "neededStock": container["needed_stock"],
+                "currentStock": container["current_stock"],
+                "currentWeight": "N/A"
             }
         return None

@@ -14,14 +14,7 @@ class Controller():
             print("Current Stock: ", stockAmt)
             print("Stock Level: ", stockLevel)
 
-            # self.model.changeStock(containerId, -1)
-            
-            # updatedStockAmt = self.model.getStock(containerId)
-            # print("Updated Stock Amount: ", updatedStockAmt)
-            # updatedStockLevel = self.model.getStockLevel(containerId)
-            # print("Updated Stock Level: ", updatedStockLevel)
-
-            # self.view.updateContainerDisplay(containerId, updatedStockLevel)
+            self.view.updateContainerDisplay(containerId, stockLevel)
 
             containerDetails = self.model.getContainerDetails(containerId)
             self.view.openContainerDetails(containerDetails)
