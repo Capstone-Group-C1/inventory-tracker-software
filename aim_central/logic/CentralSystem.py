@@ -1,7 +1,7 @@
 import json
 import os
 
-from aim_central.logic import DatabaseOperations as db_ops
+from . import DatabaseOperations as db_ops
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
