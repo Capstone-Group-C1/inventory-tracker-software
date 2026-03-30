@@ -160,7 +160,7 @@ class TestGetItemId:
             assert item_id is None
 
 
-class TestGetItemWeight:
+class TestGetItemWeightDatabaseOperations:
     """Test suite for get_item_weight function."""
 
     def test_get_item_weight_returns_value(self, sample_data):
