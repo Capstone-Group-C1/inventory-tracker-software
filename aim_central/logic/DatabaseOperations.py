@@ -141,6 +141,23 @@ def find_container(container_id):
         print(e)
         return None
 
+def get_num_containers():
+    """
+    Get the total number of containers in the database.
+
+    @throws sqlite3.OperationalError if the database operation fails.
+    @return the total count of containers as an integer.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM containers")
+            count = cur.fetchone()[0] # fetchone returns a tuple like (count,)
+            return count
+    except sqlite3.OperationalError as e:
+        print(e)
+        return 0
+
 def get_stock_level(container_id):
     """
     Returns Red, Yellow, or Green based on stock levels.

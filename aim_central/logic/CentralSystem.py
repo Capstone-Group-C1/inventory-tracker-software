@@ -23,6 +23,9 @@ class CentralSystem():
     def changeStock(self, containerId, changeAmount):
         return db_ops.change_stock(containerId, changeAmount)
     
+    def getNumContainers(self):
+        return db_ops.get_num_containers()
+    
     def getContainerDetails(self, containerId):
         container = self.findContainer(containerId)
         if container:
