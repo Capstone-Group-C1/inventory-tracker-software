@@ -118,13 +118,11 @@ class CANDriver:
         bin_id      = msg.data[0]
         weight_g    = struct.unpack('f', bytes(msg.data[1:5]))[0]  # 4-byte float
         status      = msg.data[5]
-        tare_flag   = msg.data[6]
-
         parsed = {
             "bin_id":    bin_id,
             "weight_g":  round(weight_g, 2),
             "status":    self._decode_status(status),
-            "tare_flag": self._decode_tare(tare_flag)
+            "tare_flag": "none"
         }
 
         self.logger.info(f"Received: {parsed}")
