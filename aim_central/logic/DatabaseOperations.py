@@ -18,20 +18,23 @@ def database_init():
         """CREATE TABLE IF NOT EXISTS items (
             item_id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL UNIQUE,
-            item_weight REAL NOT NULL DEFAULT 0.0
+            item_weight REAL NOT NULL DEFAULT 0.0,
+            needed_stock INTEGER NOT NULL DEFAULT 0,
+            current_stock INTEGER NOT NULL DEFAULT 0
         );""",
 
-        # Manually set container ID
-        # needed_stock is defaulted to 0 unless specified
-        # current_stock is defaulted to 0 unless specified
-        # FOREIGN KEY constraint so that the item_id in containers must exist in items
-        """CREATE TABLE IF NOT EXISTS containers (
-            container_id INTEGER PRIMARY KEY,
-            item_id INTEGER NOT NULL,
-            needed_stock INTEGER NOT NULL DEFAULT 0,
-            current_stock INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (item_id) REFERENCES items(item_id)
-        );""",
+        # Manually set container ID, with a foreign key reference to items table for item_id
+        '''CREATE TABLE IF NOT EXISTS containers (
+            container_id INTEGER PRIMARY KEY
+        );
+        ''',
+
+        # FOREIGN KEY constraint so that the container_id in item_list must exist in containers and item_id must exist in items
+        '''CREATE TABLE IF NOT EXISTS item_list (
+            container_id TEXT NOT NULL REFERENCES containers(container_id),
+            item_id INTEGER NOT NULL REFERENCES items(item_id),
+            PRIMARY KEY (container_id, item_id)
+        );''',
 
         # Per-container calibration parameters for converting raw sensor weight.
         """CREATE TABLE IF NOT EXISTS container_calibration (
@@ -76,25 +79,28 @@ def database_init():
         print("Failed to create tables:", e)
 
 
-def get_item_id(container_id):
+def get_item_ids(container_id):
     """
-    Get the item ID for a container
+    Get the item ID(s) for a container
     """
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
             cur.execute('SELECT item_id FROM containers WHERE container_id =?', (container_id,))
-            row = cur.fetchone()
+            cur.execute('SELECT i.item_id FROM items i JOIN container_items ci ON i.item_id = ci.item_id WHERE ci.container_id = ?', (container_id,))
+            row = cur.fetchall()
             if row:
-                return row[0] # row ID not the touple
+                return [item_id for item_id, in row]  # Return a list of item IDs
             return None
     except sqlite3.OperationalError as e:
         print(e)
 
 
-def get_item_weight(container_id):
+    # Note: Think about function def / return types: what is the purpose of this?
+    # Do we want to get the weight of an individual item(which requires the item_id)?
+def get_item_weight(item_id):
     """
-    Get the configured item weight for a container.
+    Get the configured item weight for an item.
 
     Returns None when the container is not found.
     """
@@ -103,10 +109,9 @@ def get_item_weight(container_id):
             cur = conn.cursor()
             cur.execute(
                 """SELECT i.item_weight
-                FROM containers c
-                JOIN items i ON c.item_id = i.item_id
-                WHERE c.container_id = ?""",
-                (container_id,),
+                FROM items i
+                WHERE i.item_id = ?""",
+                (item_id,),
             )
             row = cur.fetchone()
             if row:

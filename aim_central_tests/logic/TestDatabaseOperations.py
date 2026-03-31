@@ -153,26 +153,26 @@ class TestDatabaseInit:
 
 
 # ============================================================================
-# Tests for get_item_id()
+# Tests for get_item_ids()
 # ============================================================================
 
-class TestGetItemId:
-    """Test suite for get_item_id function."""
+class TestGetItemIds:
+    """Test suite for get_item_ids function."""
     
-    def test_get_item_id_returns_correct_id(self, sample_data):
-        """Test that get_item_id returns the correct item ID for a container."""
+    def test_get_item_ids_returns_correct_ids(self, sample_data):
+        """Test that get_item_ids returns the correct item IDs for a container."""
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
-            item_id = DatabaseOperations.get_item_id(1)
-            assert item_id == 1
+            item_ids = DatabaseOperations.get_item_ids(1)
+            assert item_ids == [1]
             
-            item_id = DatabaseOperations.get_item_id(2)
-            assert item_id == 2
+            item_ids = DatabaseOperations.get_item_ids(2)
+            assert item_ids == [2]
     
-    def test_get_item_id_returns_none_for_nonexistent_container(self, sample_data):
-        """Test that get_item_id returns None for non-existent container."""
+    def test_get_item_ids_returns_none_for_nonexistent_container(self, sample_data):
+        """Test that get_item_ids returns None for non-existent container."""
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
-            item_id = DatabaseOperations.get_item_id(999)
-            assert item_id is None
+            item_ids = DatabaseOperations.get_item_ids(999)
+            assert item_ids is None
 
 
 class TestGetItemWeightDatabaseOperations:
