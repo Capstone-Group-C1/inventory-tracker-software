@@ -16,6 +16,9 @@ license = {text = "MIT"}
 [tool.pdm]
 distribution = false
 
+[tool.pdm.scripts]
+start = {cmd = ["python3", "aim_central/main.py"]}
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
