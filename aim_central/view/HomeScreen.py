@@ -1,12 +1,7 @@
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QLabel,
     QMainWindow,
-    QStatusBar,
-    QToolBar,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
@@ -80,6 +75,12 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
+
+        self.showFullScreen()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.showNormal()
     
     def updateContainerDisplay(self, containerId, stockLevel):
         color_map = {
@@ -111,15 +112,15 @@ class MainWindow(QMainWindow):
 
     def toggleGPSWindow(self, curWindow):
         curWindow.hide()
-        self.GPSSettingsWindow.show()
+        self.GPSSettingsWindow.showFullScreen()
     
     def toggleCalibrateWindow(self, curWindow):
         curWindow.hide()
-        self.calibrateWindow.show()
+        self.calibrateWindow.showFullScreen()
     
     def toggleHomeWindow(self, curWindow):
         curWindow.hide()
-        self.show()
+        self.showFullScreen()
 
 
     def addFeatures(self, features):
