@@ -1,3 +1,4 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -63,6 +64,10 @@ class CalibrateWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.showNormal()
 
     def addFeatures(self, features):
         self.features = features
