@@ -14,14 +14,26 @@ class CentralSystem():
     def findContainer(self, containerId):
         return db_ops.find_container(containerId)
 
-    def getStockLevel(self, containerId):
-        return db_ops.get_stock_level(containerId)
+    def getStockLevel(self, item_id):
+        """
+        Returns Red, Yellow, or Green based on stock levels.
+        """
+        item = db_ops.find_item(item_id)
+        if item:
+            if item["current_stock"] == 0:
+                return "Red"
+            elif item["current_stock"] <= item["needed_stock"] * 0.5:
+                return "Yellow"
+        return "Green"
     
-    def getStock(self, containerId):
-        return db_ops.get_stock(containerId)
-    
-    def changeStock(self, containerId, changeAmount):
-        return db_ops.change_stock(containerId, changeAmount)
+    def getStock(self, item_id):
+        """
+        Returns the current stock of the item or -1 if we can't find the item.
+        """
+        item = db_ops.find_item(item_id)
+        if item:
+            return item["current_stock"]
+        return -1
     
     def getNumContainers(self):
         return db_ops.get_num_containers()

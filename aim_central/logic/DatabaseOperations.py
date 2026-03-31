@@ -123,7 +123,7 @@ def get_item_weight(item_id):
 
 def find_container(container_id):
     """
-    Find a container in the database by its ID.
+    Find a container in the database by its ID. Returns a dictionary with item and container details or None if not found.
 
     @throws sqlite3.OperationalError if the database operation fails.
     @return a dictionary with container details or None if not found.
@@ -132,15 +132,41 @@ def find_container(container_id):
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row  # access columns by name
             cur = conn.cursor()
-            # JOIN connects two tables based on a common column to get item name from items table and container details
-            cur.execute(
-                """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
-                FROM containers c
-                JOIN items i ON c.item_id = i.item_id
-                WHERE c.container_id = ?""", (container_id,))
-            row = cur.fetchone() # returns a single row or None
+            cur.execute("""
+                SELECT i.item_id, i.item_name, i.needed_stock, i.current_stock
+                FROM items i
+                JOIN item_list il ON i.item_id = il.item_id
+                WHERE il.container_id = ?
+            """, (container_id,))
+
+            result = {"items": [dict(row) for row in cur.fetchall()]}
+            if result:
+                return result 
+            return None
+    except sqlite3.OperationalError as e:
+        print(e)
+        return None
+    
+def find_item(item_id):
+    """
+    Find an item in the database by its ID. Returns a dictionary with item details or None if not found.
+
+    @throws sqlite3.OperationalError if the database operation fails.
+    @return a dictionary with item details or None if not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row  # access columns by name
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT item_id, item_name, needed_stock, current_stock
+                FROM items
+                WHERE item_id = ?
+            """, (item_id,))
+
+            row = cur.fetchone()
             if row:
-                return dict(row) # convert to dictionary
+                return dict(row)
             return None
     except sqlite3.OperationalError as e:
         print(e)
@@ -163,31 +189,19 @@ def get_num_containers():
         print(e)
         return 0
 
-def get_stock_level(container_id):
+def get_stock(item_id):
     """
-    Returns Red, Yellow, or Green based on stock levels.
+    Returns the current stock of the item or -1 if we can't find the item.
     """
-    container = find_container(container_id)
-    if container:
-        if container["current_stock"] == 0:
-            return "Red"
-        elif container["current_stock"] <= container["needed_stock"] * 0.5:
-            return "Yellow"
-    return "Green"
-
-def get_stock(container_id):
-    """
-    Returns the current stock of the container or -1 if we can't find the container.
-    """
-    container = find_container(container_id)
-    if container:
-        return container["current_stock"]
+    item = find_item(item_id)
+    if item:
+        return item["current_stock"]
     return -1
 
 
-def set_stock(container_id, new_stock):
+def set_stock(item_id, new_stock):
     """
-    Sets the current_stock of a container to an absolute value.
+    Sets the current_stock of an item to an absolute value.
     """
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
@@ -196,38 +210,11 @@ def set_stock(container_id, new_stock):
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
             cur.execute(
-                "UPDATE containers SET current_stock = ? WHERE container_id = ?",
-                (new_stock, container_id),
+                "UPDATE items SET current_stock = ? WHERE item_id = ?",
+                (new_stock, item_id),
             )
             conn.commit()
             return cur.rowcount > 0
-    except sqlite3.OperationalError as e:
-        print(f"Database error: {e}")
-        return False
-
-
-def change_stock(container_id, change_amount):
-    """
-    Adjusts stock of a container by change_amount.
-    """
-    container = find_container(container_id)
-    if container is None:
-        print(f"Error: Container with ID {container_id} not found.")
-        return False
-
-    new_stock = container["current_stock"] + change_amount
-    if new_stock < 0:
-        print("Error: Attempting to set stock below zero.")
-        return False
-
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-            # Update the current_stock for the specified container_id
-            cur.execute('UPDATE containers SET current_stock = ? WHERE container_id = ?', (new_stock, container_id))
-            conn.commit()
-            print(f"Stock updated successfully for container ID {container_id}. New stock: {new_stock}")
-            return True
     except sqlite3.OperationalError as e:
         print(f"Database error: {e}")
         return False
