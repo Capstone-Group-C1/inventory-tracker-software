@@ -32,7 +32,8 @@ class MainWindow(QMainWindow):
     def __init__(self, model):
         super().__init__()
         self.setWindowTitle("Ambulance Inventory Tracker")
-        self.resize(800, 600)
+        #self.resize(800, 600)
+        self.showFullScreen()
         self.container_buttons_list = []
         self.model = model # read only
         self.features = None
