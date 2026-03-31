@@ -46,19 +46,46 @@ class CalibrateWindow(QMainWindow):
         layout2 = QHBoxLayout()
         layout3 = QHBoxLayout()
 
-        for i in range(4):
+
+        num_containers = model.getNumContainers()
+        containers_per_row = 5
+
+        if num_containers < 4:
+                containers_per_row = num_containers
+        elif num_containers % 3 == 0:
+            containers_per_row = 3
+        elif num_containers % 4 == 0:
+            containers_per_row = 4
+
+        for i in range(containers_per_row):
             container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
             layout2.addWidget(container_button)
 
         layout1.addLayout(layout2)
-        layout1.addSpacing(20)
 
-        for i in range(4, 8):
-            container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-            layout3.addWidget(container_button)
+        if num_containers/containers_per_row >= 2:
+            layout1.addSpacing(20)
+            layout3 = QHBoxLayout()
 
-        layout1.addLayout(layout3)
-        layout1.addSpacing(20)
+            for i in range(containers_per_row, 2*containers_per_row):
+                container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
+                layout3.addWidget(container_button)
+
+            layout1.addLayout(layout3)
+            layout1.addSpacing(20)
+
+        # up to 3 rows, 15 container max support
+        if num_containers/containers_per_row >= 3:
+            layout1.addSpacing(20)
+            layout4 = QHBoxLayout()
+
+            for i in range(2*containers_per_row, 3*containers_per_row):
+                container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
+                layout4.addWidget(container_button)
+
+            layout1.addLayout(layout4)
+            layout1.addSpacing(20)
+
 
         widget = QWidget()
         widget.setLayout(layout1)
