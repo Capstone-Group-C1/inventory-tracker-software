@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from collections import defaultdict, deque
 
@@ -39,6 +40,8 @@ class CanDatabaseBridge:
         self.stability_tolerance_g = float(stability_tolerance_g)
         self._weight_windows = defaultdict(lambda: deque(maxlen=self.stability_window))
         self._last_stable_weight = {}
+        self._stop_event = threading.Event()
+        self._thread = None
         self.logger = logging.getLogger("CanDatabaseBridge")
 
     def _stable_weight(self, bin_id, latest_weight_g):
@@ -124,20 +127,6 @@ class CanDatabaseBridge:
                 note="sensor reported hardware error",
             )
             self.logger.warning("Bin %s reported sensor error — skipping.", bin_id)
-            return True
-
-        if tare_flag == "success":
-            # STM32 just confirmed a tare — reset all state for this bin.
-            self._weight_windows[bin_id].clear()
-            self._last_stable_weight.pop(bin_id, None)
-            DatabaseOperations.record_sensor_event(
-                container_id=bin_id,
-                raw_weight_g=weight_g,
-                sensor_status=status,
-                decision="tare_confirmed",
-                note="tare success acknowledged — stability window reset",
-            )
-            self.logger.info("Bin %s tare confirmed — stability window reset.", bin_id)
             return True
 
         stable_weight_g = self._stable_weight(bin_id, weight_g)
@@ -245,24 +234,60 @@ class CanDatabaseBridge:
             self._last_stable_weight.pop(container_id, None)
             self.logger.info("Tare command sent to bin %s.", container_id)
 
-    def run_forever(self, timeout=1.0, idle_sleep_s=0.05):
+    def start(self, timeout=1.0, idle_sleep_s=0.05):
         """
-        Run polling loop for Raspberry Pi service usage.
+        Start the CAN polling loop in a background thread.
+        Called by the geofence monitor when the ambulance arrives at base.
         """
-        DatabaseOperations.database_init()
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run, args=(timeout, idle_sleep_s), daemon=True
+        )
+        self._thread.start()
+        self.logger.info("CAN-DB bridge started.")
 
-        with self.driver:
-            self.logger.info("CAN-DB bridge started.")
-            while True:
-                processed = self.process_one_message(timeout=timeout)
-                if not processed:
-                    time.sleep(idle_sleep_s)
+    def stop(self):
+        """
+        Stop the CAN polling loop.
+        Called by the geofence monitor when the ambulance leaves base.
+        """
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=5.0)
+        self.driver.disconnect()
+        self.logger.info("CAN-DB bridge stopped.")
+
+    def _run(self, timeout=1.0, idle_sleep_s=0.05):
+        DatabaseOperations.database_init()
+        self.driver.connect()
+
+        self.logger.info("CAN polling loop running.")
+        while not self._stop_event.is_set():
+            processed = self.process_one_message(timeout=timeout)
+            if not processed:
+                time.sleep(idle_sleep_s)
 
 
 def main():
+    from aim_central.drivers.gpsDriver import GeofenceMonitor
+
     logging.basicConfig(level=logging.INFO)
+
     bridge = CanDatabaseBridge(can_channel='can0', bitrate=500000)
-    bridge.run_forever()
+
+    monitor = GeofenceMonitor(
+        on_enter=bridge.start,
+        on_exit=bridge.stop,
+    )
+    monitor.start()
+
+    # Keep the main thread alive — bridge and monitor run in background threads.
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        monitor.stop()
+        bridge.stop()
 
 
 if __name__ == "__main__":

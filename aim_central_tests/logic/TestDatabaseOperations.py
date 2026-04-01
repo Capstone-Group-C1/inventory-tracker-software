@@ -75,7 +75,7 @@ class TestDatabaseInit:
             with sqlite3.connect(test_db) as conn:
                 cursor = conn.cursor()
 
-                for table in ("items", "containers", "item_list", "container_calibration", "sensor_events"):
+                for table in ("items", "containers", "item_list", "sensor_events"):
                     cursor.execute(
                         "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
                     )
@@ -350,30 +350,10 @@ class TestContainerQueries:
 
 
 # ============================================================================
-# Tests for calibration and sensor events
+# Tests for sensor events
 # ============================================================================
 
-class TestCalibrationAndEvents:
-
-    def test_get_container_calibration_returns_defaults(self, sample_data):
-        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
-            cfg = DatabaseOperations.get_container_calibration(1)
-            assert cfg["empty_bin_weight_g"] == 0.0
-            assert cfg["scale_factor"] == 1.0
-            assert cfg["min_detectable_weight_g"] == 0.0
-            assert cfg["rounding_mode"] == "round"
-
-    def test_upsert_and_read_back_calibration(self, sample_data):
-        with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
-            assert DatabaseOperations.upsert_container_calibration(
-                1, empty_bin_weight_g=10.0, scale_factor=1.2,
-                min_detectable_weight_g=0.5, rounding_mode="floor"
-            ) is True
-            cfg = DatabaseOperations.get_container_calibration(1)
-            assert cfg["empty_bin_weight_g"] == 10.0
-            assert cfg["scale_factor"] == 1.2
-            assert cfg["min_detectable_weight_g"] == 0.5
-            assert cfg["rounding_mode"] == "floor"
+class TestSensorEvents:
 
     def test_record_sensor_event(self, sample_data):
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):

@@ -93,38 +93,6 @@ class TestNotTared:
 
 
 # ---------------------------------------------------------------------------
-# Tare confirmed
-# ---------------------------------------------------------------------------
-
-class TestTareConfirmed:
-    def test_clears_stability_window_and_last_stable_weight(self):
-        bridge = make_bridge(stability_window=3)
-        bridge._mock_driver.receive.return_value = make_msg(bin_id=2, weight_g=50.0)
-
-        with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.record_sensor_event"):
-            bridge.process_one_message()
-            bridge.process_one_message()
-            bridge._last_stable_weight[2] = 50.0
-            assert len(bridge._weight_windows[2]) == 2
-
-            bridge._mock_driver.receive.return_value = make_msg(bin_id=2, tare_flag="success")
-            bridge.process_one_message()
-
-        assert len(bridge._weight_windows[2]) == 0
-        assert 2 not in bridge._last_stable_weight
-
-    def test_no_stock_change_on_tare_confirmed(self):
-        bridge = make_bridge()
-        bridge._mock_driver.receive.return_value = make_msg(tare_flag="success")
-
-        with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.change_stock") as mock_cs:
-            with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.record_sensor_event"):
-                bridge.process_one_message()
-
-        mock_cs.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
 # Stability window
 # ---------------------------------------------------------------------------
 

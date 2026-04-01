@@ -36,16 +36,6 @@ def database_init():
             PRIMARY KEY (container_id, item_id)
         );''',
 
-        # Per-container calibration parameters for converting raw sensor weight.
-        """CREATE TABLE IF NOT EXISTS container_calibration (
-            container_id INTEGER PRIMARY KEY,
-            empty_bin_weight_g REAL NOT NULL DEFAULT 0.0,
-            scale_factor REAL NOT NULL DEFAULT 1.0,
-            min_detectable_weight_g REAL NOT NULL DEFAULT 0.0,
-            rounding_mode TEXT NOT NULL DEFAULT 'round',
-            FOREIGN KEY (container_id) REFERENCES containers(container_id)
-        );""",
-
         # Time-series history for troubleshooting and analytics.
         """CREATE TABLE IF NOT EXISTS sensor_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -351,79 +341,6 @@ def import_from_csv(csv_file_path):
         return "Import successful!"
     except Exception as e:
         return "Unable to import data."
-
-
-def get_container_calibration(container_id):
-    """
-    Get per-container calibration values.
-
-    Returns defaults when no calibration row exists.
-    """
-    defaults = {
-        "empty_bin_weight_g": 0.0,
-        "scale_factor": 1.0,
-        "min_detectable_weight_g": 0.0,
-        "rounding_mode": "round",
-    }
-
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT empty_bin_weight_g, scale_factor, min_detectable_weight_g, rounding_mode
-                FROM container_calibration
-                WHERE container_id = ?""",
-                (container_id,),
-            )
-            row = cur.fetchone()
-            if row:
-                return dict(row)
-            return defaults
-    except sqlite3.OperationalError:
-        # Keep compatibility with databases created before calibration table existed.
-        return defaults
-
-
-def upsert_container_calibration(
-    container_id,
-    empty_bin_weight_g=0.0,
-    scale_factor=1.0,
-    min_detectable_weight_g=0.0,
-    rounding_mode="round",
-):
-    """
-    Insert or update per-container calibration values.
-    """
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                """INSERT INTO container_calibration (
-                    container_id,
-                    empty_bin_weight_g,
-                    scale_factor,
-                    min_detectable_weight_g,
-                    rounding_mode
-                ) VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(container_id) DO UPDATE SET
-                    empty_bin_weight_g = excluded.empty_bin_weight_g,
-                    scale_factor = excluded.scale_factor,
-                    min_detectable_weight_g = excluded.min_detectable_weight_g,
-                    rounding_mode = excluded.rounding_mode""",
-                (
-                    container_id,
-                    float(empty_bin_weight_g),
-                    float(scale_factor),
-                    float(min_detectable_weight_g),
-                    rounding_mode,
-                ),
-            )
-            conn.commit()
-            return True
-    except sqlite3.OperationalError as e:
-        print(f"Database error: {e}")
-        return False
 
 
 def record_sensor_event(
