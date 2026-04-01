@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QColor, QPalette
 from view.ContainerButton import ContainerButton
-from view.ContainerDialog import CustomDialog
+from view.ContainerDialog import ContainerDialog
 from view.CalibrateScreen import CalibrateWindow
 from view.GPSSettingsScreen import GPSSettingsWindow 
 
@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Ambulance Inventory Tracker")
         self.resize(800, 600)
-        self.container_buttons_list = []
+        self.container_buttons_list = [ContainerButton(0, 2)] # 1 indexed for ease of use with container ids, index 0 is not used
         self.model = model # read only
         self.features = None
 
@@ -63,39 +63,54 @@ class MainWindow(QMainWindow):
         layout2 = QHBoxLayout()
 
         num_containers = model.getNumContainers()
+        print("Number of containers in system: ", num_containers)
         containers_per_row = 5
 
         if num_containers < 4:
                 containers_per_row = num_containers
         elif num_containers % 3 == 0:
             containers_per_row = 3
-        elif num_containers % 4 == 0:
+        elif num_containers % 4 == 0 or num_containers == 7:
             containers_per_row = 4
 
-        for i in range(containers_per_row):
-            self.container_buttons_list.append(ContainerButton(i))
+        for i in range(1, containers_per_row + 1):
+            stock_level = model.getContainerStockLevel(i)
+            self.container_buttons_list.append(ContainerButton(i, stock_level))
             layout2.addWidget(self.container_buttons_list[i])
 
         layout1.addLayout(layout2)
 
-        if num_containers/containers_per_row >= 2:
+        if num_containers/containers_per_row >= 1:
+            print("Adding second row of containers")
             layout1.addSpacing(20)
             layout3 = QHBoxLayout()
 
-            for i in range(containers_per_row, 2*containers_per_row):
-                self.container_buttons_list.append(ContainerButton(i))
+            if num_containers < 2*containers_per_row:
+                print("Less than 2 rows of containers, only adding ", num_containers - containers_per_row, " containers to second row")
+                second_row_containers = num_containers - containers_per_row
+
+            for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
+                print("Adding container ", i, " to second row")
+                stock_level = model.getContainerStockLevel(i)
+                print("Stock level for container ", i, ": ", stock_level)
+                self.container_buttons_list.append(ContainerButton(i, stock_level))
                 layout3.addWidget(self.container_buttons_list[i])
 
             layout1.addLayout(layout3)
             layout1.addSpacing(20)
 
         # up to 3 rows, 15 container max support
-        if num_containers/containers_per_row >= 3:
+        if num_containers/containers_per_row >= 2:
             layout1.addSpacing(20)
             layout4 = QHBoxLayout()
 
-            for i in range(2*containers_per_row, 3*containers_per_row):
-                self.container_buttons_list.append(ContainerButton(i))
+            if num_containers < 3*containers_per_row:
+                third_row_containers = num_containers - 2*containers_per_row
+
+            for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
+                stock_level = model.getContainerStockLevel(i)
+                print("Stock level for container ", i, ": ", stock_level)
+                self.container_buttons_list.append(ContainerButton(i, stock_level))
                 layout4.addWidget(self.container_buttons_list[i])
 
             layout1.addLayout(layout4)
@@ -111,10 +126,18 @@ class MainWindow(QMainWindow):
             "Yellow": "#FFEB3B",
             "Red": "#F44336"
         }
+
+        stock_color = "Green"
+        if stockLevel < 2:
+            if stockLevel == 0:
+                stock_color = "Red"
+            else:                
+                stock_color = "Yellow"
+    
         button = self.container_buttons_list[containerId]
         button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {color_map.get(stockLevel, "#4CAF50")};
+                background-color: {color_map.get(stock_color, "#4CAF50")};
                 border: none;
                 color: white;
                 padding: 50px 50px;
@@ -124,12 +147,12 @@ class MainWindow(QMainWindow):
                 border-radius: 12px;
             }}
             QPushButton:hover {{
-                background-color: {color_map.get(stockLevel, "#45a049")};
+                background-color: {color_map.get(stock_color, "#45a049")};
             }}
         """)
 
     def openContainerDetails(self, container_details):
-        dialog = CustomDialog(container_details, self)
+        dialog = ContainerDialog(container_details, self)
         dialog.exec()
 
 

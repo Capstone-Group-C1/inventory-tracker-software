@@ -9,6 +9,9 @@ class CentralSystem():
 
     def getStockLevel(self, item_id):
         return db_ops.get_stock_level(item_id)
+    
+    def getContainerStockLevel(self, containerId):
+        return db_ops.get_container_stock_level(containerId)
 
     def getStock(self, item_id):
         return db_ops.get_stock(item_id)
@@ -21,16 +24,6 @@ class CentralSystem():
 
     def getNumContainers(self):
         return db_ops.get_num_containers()
-    
-    def getContainerDetails(self, containerId):
-        container = self.findContainer(containerId)
-        if container:
-            return {
-                "id": containerId,
-                "items": container["items"],
-                "currentWeight": "N/A"
-            }
-        return None
 
     def import_db(self, file_path):
         return db_ops.import_from_csv(file_path)

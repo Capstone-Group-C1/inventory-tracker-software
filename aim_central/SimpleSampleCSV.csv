@@ -1,4 +1,9 @@
 item_id,container_id,item_name,needed_stock,current_stock
 1,1,triangular bandage,4,4
 2,2,epipen (adult),2,2
-3,3,petroleum dressing,5,5
+3,3,petroleum dressing,5,0
+4,4,OPAs (XL),2,2
+5,4,OPAs (L),2,1
+6,5,tegaderm film,8,8
+7,6,foam limb holder,3,1
+8,7,surgical lubricant,4,4

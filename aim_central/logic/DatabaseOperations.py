@@ -119,14 +119,39 @@ def find_container(container_id):
             conn.row_factory = sqlite3.Row  # access columns by name
             cur = conn.cursor()
             cur.execute("""
-                SELECT i.item_id, i.item_name, i.needed_stock, i.current_stock
-                FROM items i
-                JOIN item_list il ON i.item_id = il.item_id
-                WHERE il.container_id = ?
+                SELECT 
+                    c.container_id,
+                    i.item_id,
+                    i.item_name,
+                    i.needed_stock,
+                    i.current_stock
+                FROM containers c
+                JOIN item_list il ON c.container_id = il.container_id
+                JOIN items i      ON il.item_id = i.item_id
+                WHERE c.container_id = ?;
             """, (container_id,))
 
-            result = {"items": [dict(row) for row in cur.fetchall()]}
-            if result["items"]:
+            rows = cur.fetchall()
+
+            result = {
+                "container_id": container_id,
+                "items": [
+                    {
+                        "item_id":       r["item_id"],
+                        "item_name":     r["item_name"],
+                        "needed_stock":  r["needed_stock"],
+                        "current_stock": r["current_stock"],
+                    }
+                    for r in rows
+                ]
+            }
+
+            print("Database query result for container {}: {}".format(container_id, result))
+            # adding stock level to each item in the container details for use in the UI
+            for item in result["items"]:
+                item["stock_level"] = get_stock_level(item["item_id"])
+
+            if result["items"]:  # Only return if we found at least one item for the container
                 return result
             return None
     except sqlite3.OperationalError as e:
@@ -201,15 +226,30 @@ def get_stock(item_id):
 
 def get_stock_level(item_id):
     """
-    Returns Red, Yellow, or Green based on stock levels for an item.
+    Returns 0 if out of stock, 1 if low stock, and 2 if in stock.
+    Changed to allow iteration over multiple items in a container, and use the lowest stock level to drive the button colour.
     """
     item = find_item(item_id)
     if item:
         if item["current_stock"] == 0:
-            return "Red"
+            return 0
         elif item["current_stock"] <= item["needed_stock"] * 0.5:
-            return "Yellow"
-    return "Green"
+            return 1
+    return 2
+
+
+def get_container_stock_level(container_id):
+    """
+    Returns the lowest stock level for all items in a container.
+    """
+    item_ids = get_item_ids(container_id)
+    print("Item IDs for container {}: {}".format(container_id, item_ids))
+    lowest_stock_level = 2
+    for item in item_ids:
+        stock_level = get_stock_level(item)
+        if stock_level is not None and stock_level < lowest_stock_level:
+            lowest_stock_level = stock_level
+    return lowest_stock_level
 
 
 def set_stock(item_id, new_stock):
@@ -318,6 +358,12 @@ def import_from_csv(csv_file_path):
         df = pd.read_csv(csv_file_path)
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
+
+            # Clear existing data before reimporting
+            cur.execute("DELETE FROM item_list")
+            cur.execute("DELETE FROM items")
+            cur.execute("DELETE FROM containers")
+
             for _, row in df.iterrows():
                 # Insert or ignore the container
                 cur.execute("""
