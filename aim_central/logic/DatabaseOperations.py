@@ -86,18 +86,14 @@ def get_item_ids(container_id):
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
-            cur.execute('SELECT item_id FROM containers WHERE container_id =?', (container_id,))
-            cur.execute('SELECT i.item_id FROM items i JOIN container_items ci ON i.item_id = ci.item_id WHERE ci.container_id = ?', (container_id,))
+            cur.execute('SELECT item_id FROM item_list WHERE container_id = ?', (container_id,))
             row = cur.fetchall()
-            if row:
-                return [item_id for item_id, in row]  # Return a list of item IDs
-            return None
+            return [item_id for item_id, in row]  # Return a list of item IDs (empty list if none)
     except sqlite3.OperationalError as e:
         print(e)
+        return []
 
 
-    # Note: Think about function def / return types: what is the purpose of this?
-    # Do we want to get the weight of an individual item(which requires the item_id)?
 def get_item_weight(item_id):
     """
     Get the configured item weight for an item.
@@ -140,8 +136,8 @@ def find_container(container_id):
             """, (container_id,))
 
             result = {"items": [dict(row) for row in cur.fetchall()]}
-            if result:
-                return result 
+            if result["items"]:
+                return result
             return None
     except sqlite3.OperationalError as e:
         print(e)
@@ -159,7 +155,7 @@ def find_item(item_id):
             conn.row_factory = sqlite3.Row  # access columns by name
             cur = conn.cursor()
             cur.execute("""
-                SELECT item_id, item_name, needed_stock, current_stock
+                SELECT item_id, item_name, item_weight, needed_stock, current_stock
                 FROM items
                 WHERE item_id = ?
             """, (item_id,))
@@ -171,6 +167,20 @@ def find_item(item_id):
     except sqlite3.OperationalError as e:
         print(e)
         return None
+
+def get_all_container_ids():
+    """
+    Returns a list of all container IDs in the database.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT container_id FROM containers")
+            return [row[0] for row in cur.fetchall()]
+    except sqlite3.OperationalError as e:
+        print(e)
+        return []
+
 
 def get_num_containers():
     """
@@ -199,6 +209,19 @@ def get_stock(item_id):
     return -1
 
 
+def get_stock_level(item_id):
+    """
+    Returns Red, Yellow, or Green based on stock levels for an item.
+    """
+    item = find_item(item_id)
+    if item:
+        if item["current_stock"] == 0:
+            return "Red"
+        elif item["current_stock"] <= item["needed_stock"] * 0.5:
+            return "Yellow"
+    return "Green"
+
+
 def set_stock(item_id, new_stock):
     """
     Sets the current_stock of an item to an absolute value.
@@ -213,6 +236,31 @@ def set_stock(item_id, new_stock):
                 "UPDATE items SET current_stock = ? WHERE item_id = ?",
                 (new_stock, item_id),
             )
+            conn.commit()
+            return cur.rowcount > 0
+    except sqlite3.OperationalError as e:
+        print(f"Database error: {e}")
+        return False
+
+
+def change_stock(item_id, change_amount):
+    """
+    Adjusts stock of an item by change_amount (positive or negative).
+    """
+    item = find_item(item_id)
+    if item is None:
+        print(f"Error: Item with ID {item_id} not found.")
+        return False
+
+    new_stock = item["current_stock"] + change_amount
+    if new_stock < 0:
+        print("Error: Attempting to set stock below zero.")
+        return False
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute('UPDATE items SET current_stock = ? WHERE item_id = ?', (new_stock, item_id))
             conn.commit()
             return cur.rowcount > 0
     except sqlite3.OperationalError as e:
@@ -419,49 +467,6 @@ def record_sensor_event(
         # Keep compatibility with databases created before sensor_events table existed.
         return False
 
-
-def update_stock_from_weight(container_id, measured_weight_g):
-    """
-    Converts measured weight (grams) into item count, then updates stock.
-
-    Assumption: item_weight stored in DB is grams per unit.
-    """
-    if measured_weight_g < 0:
-        print("Error: measured_weight_g cannot be negative.")
-        return False
-
-    item_weight_g = get_item_weight(container_id)
-    if item_weight_g is None:
-        print(f"Error: No item configured for container ID {container_id}.")
-        return False
-
-    if item_weight_g <= 0:
-        print(f"Error: Invalid item weight ({item_weight_g}) for container ID {container_id}.")
-        return False
-
-    calibration = get_container_calibration(container_id)
-    empty_bin_weight_g = float(calibration["empty_bin_weight_g"])
-    scale_factor = float(calibration["scale_factor"])
-    min_detectable_weight_g = float(calibration["min_detectable_weight_g"])
-    rounding_mode = calibration["rounding_mode"]
-
-    if scale_factor <= 0:
-        print(f"Error: Invalid scale_factor ({scale_factor}) for container ID {container_id}.")
-        return False
-
-    net_weight_g = max(0.0, (measured_weight_g - empty_bin_weight_g) * scale_factor)
-    if net_weight_g < min_detectable_weight_g:
-        net_weight_g = 0.0
-
-    ratio = net_weight_g / item_weight_g
-    if rounding_mode == "floor":
-        calculated_stock = int(ratio)
-    elif rounding_mode == "ceil":
-        calculated_stock = int(ratio) if ratio == int(ratio) else int(ratio) + 1
-    else:
-        calculated_stock = int(round(ratio))
-
-    return set_stock(container_id, calculated_stock)
 
 # Main Function to initialize database
 # if __name__ == "__main__":
