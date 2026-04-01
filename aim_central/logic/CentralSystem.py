@@ -31,3 +31,6 @@ class CentralSystem():
                 "currentWeight": "N/A"
             }
         return None
+
+    def import_db(self, file_path):
+        return db_ops.import_from_csv(file_path)

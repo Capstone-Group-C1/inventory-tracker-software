@@ -17,6 +17,8 @@ logger.info("Starting AIM Central System...")
 app = QApplication(sys.argv)
 
 model = CentralSystem()
+model.import_db("aim_central/SimpleSampleCSV.csv")
+
 view = MainWindow(model)
 controller = Controller(view)
 
@@ -28,7 +30,7 @@ logger.info("AIM Central System launched successfully.")
 # Create a Qt widget, which will be our window.
 window = view
 logger.debug("Main window created.")
-window.show()  # IMPORTANT!!!!! Windows are hidden by default.
+window.show() 
 logger.debug("Main window shown.")
 
 # Start the event loop.

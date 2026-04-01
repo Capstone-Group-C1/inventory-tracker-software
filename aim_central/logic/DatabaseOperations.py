@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import pandas as pd
 from email.message import EmailMessage
-from aim_central.config.config import AIMConfig
+from config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
 DB_PATH = os.path.join(os.path.dirname(__file__), AIMConfig.DB_PATH)
@@ -276,9 +276,12 @@ def export_to_email(receiver_email):
     try:
         with sqlite3.connect(DB_PATH) as conn:
 
-            query = """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
-                    FROM containers c
-                    JOIN items i ON c.item_id = i.item_id"""
+            query = """
+                SELECT i.item_id, il.container_id, i.item_name, i.needed_stock, i.current_stock
+                FROM items i
+                JOIN item_list il ON i.item_id = il.item_id
+                ORDER BY il.container_id, i.item_id
+            """
 
             df = pd.read_sql_query(query, conn)
     except sqlite3.OperationalError as e:
@@ -309,34 +312,37 @@ def export_to_email(receiver_email):
 def import_from_csv(csv_file_path):
     """
     Imports inventory data from a CSV file and updates the database.
-    The CSV file should have columns: container_id, item_name, needed_stock, current_stock
+    The CSV file should have columns: item_id, container_id, item_name, needed_stock, current_stock
     """
     try:
         df = pd.read_csv(csv_file_path)
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
             for _, row in df.iterrows():
-                # Check if item exists, if not insert it
-                cur.execute('SELECT item_id FROM items WHERE item_name = ?', (row['item_name'],))
-                item = cur.fetchone()
-                if item:
-                    item_id = item[0]
-                else:
-                    cur.execute('INSERT INTO items (item_name) VALUES (?)', (row['item_name'],))
-                    item_id = cur.lastrowid
+                # Insert or ignore the container
+                cur.execute("""
+                    INSERT OR IGNORE INTO containers (container_id)
+                    VALUES (?)
+                """, (row['container_id'],))
 
-                # Update or insert container
-                cur.execute('SELECT container_id FROM containers WHERE container_id = ?', (row['container_id'],))
-                container = cur.fetchone()
-                if container:
-                    cur.execute('''UPDATE containers
-                                   SET item_id = ?, needed_stock = ?, current_stock = ?
-                                   WHERE container_id = ?''',
-                                (item_id, row['needed_stock'], row['current_stock'], row['container_id']))
-                else:
-                    cur.execute('''INSERT INTO containers (container_id, item_id, needed_stock, current_stock)
-                                   VALUES (?, ?, ?, ?)''',
-                                (row['container_id'], item_id, row['needed_stock'], row['current_stock']))
+                # Insert or update the item (upsert)
+                cur.execute("""
+                    INSERT INTO items (item_name, needed_stock, current_stock)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(item_name) DO UPDATE SET
+                        needed_stock = excluded.needed_stock,
+                        current_stock = excluded.current_stock
+                """, (row['item_name'], row['needed_stock'], row['current_stock']))
+
+                # Get the item_id (whether it was just inserted or already existed)
+                cur.execute("SELECT item_id FROM items WHERE item_name = ?", (row['item_name'],))
+                item_id = cur.fetchone()[0]
+
+                # Link item to container in item_list
+                cur.execute("""
+                    INSERT OR IGNORE INTO item_list (container_id, item_id)
+                    VALUES (?, ?)
+                """, (row['container_id'], item_id))
             conn.commit()
         return "Import successful!"
     except Exception as e:
