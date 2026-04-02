@@ -13,6 +13,9 @@ class CentralSystem():
     def getContainerWeight(self, containerId):
         return db_ops.get_container_weight(containerId)
 
+    def setContainerWeight(self, containerId, weight):
+        return db_ops.set_container_weight(containerId, weight)
+
     def getStockLevel(self, item_id):
         return db_ops.get_stock_level(item_id)
     

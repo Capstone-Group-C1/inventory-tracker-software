@@ -108,6 +108,24 @@ def get_item_weight(item_id):
         print(e)
         return None
 
+def set_container_weight(container_id, weight):
+    """
+    Persist the latest stable sensor weight for a container.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE containers SET container_weight = ? WHERE container_id = ?",
+                (float(weight), container_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+    except sqlite3.OperationalError as e:
+        print(f"Database error updating container weight: {e}")
+        return False
+
+
 def get_container_weight(container_id):
     """
     Get the configured container weight for a container.

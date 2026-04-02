@@ -140,6 +140,9 @@ class CanDatabaseBridge:
             )
             return True
 
+        # Persist the latest stable reading so the GUI can display it.
+        DatabaseOperations.set_container_weight(bin_id, stable_weight_g)
+
         # First stable reading for this bin — store as baseline, nothing to diff against yet.
         if bin_id not in self._last_stable_weight:
             self._last_stable_weight[bin_id] = stable_weight_g
