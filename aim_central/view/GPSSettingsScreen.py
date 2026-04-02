@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from aim_central.view.TopBarLayout import TopBarLayout
 
 class GPSSettingsWindow(QMainWindow):
     def __init__(self, model):
@@ -17,15 +18,9 @@ class GPSSettingsWindow(QMainWindow):
         self.model = model # read only
 
         self.setStyleSheet("""
-            QPushButton {
-                background-color: #999999;
-                border: none;
-                color: white;
-                padding: 50px 50px;
-                text-align: center;
+            QLabel {
                 font-size: 16px;
-                margin: 4px 2px;
-                border-radius: 12px;
+                font-weight: bold;
             }
         """)
 
@@ -40,12 +35,18 @@ class GPSSettingsWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.button_action2)
 
-        layout1 = QVBoxLayout()
-        layout1.addWidget(QLabel("GPS Settings"))
-        layout1.addSpacing(200)
+        mainLayout = QVBoxLayout()
+        self.topBarLayout = TopBarLayout("gps")
+
+        
+        mainLayout.addLayout(self.topBarLayout)
+        mainLayout.addSpacing(50)
+        mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        mainLayout.addWidget(QLabel("GPS Settings Not Currently Available"), alignment=Qt.AlignmentFlag.AlignTop)
+        mainLayout.addSpacing(200)
 
         widget = QWidget()
-        widget.setLayout(layout1)
+        widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
 
     def keyPressEvent(self, event):
@@ -56,4 +57,6 @@ class GPSSettingsWindow(QMainWindow):
             self.features = features
             self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
             self.button_action2.triggered.connect(lambda: self.features.toggleCalibrateWindow(self))
+
+            self.topBarLayout.addFeatures(features)
 

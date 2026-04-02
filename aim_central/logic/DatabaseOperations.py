@@ -18,30 +18,24 @@ def database_init():
         """CREATE TABLE IF NOT EXISTS items (
             item_id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_name TEXT NOT NULL UNIQUE,
-            item_weight REAL NOT NULL DEFAULT 0.0
-        );""",
-
-        # Manually set container ID
-        # needed_stock is defaulted to 0 unless specified
-        # current_stock is defaulted to 0 unless specified
-        # FOREIGN KEY constraint so that the item_id in containers must exist in items
-        """CREATE TABLE IF NOT EXISTS containers (
-            container_id INTEGER PRIMARY KEY,
-            item_id INTEGER NOT NULL,
+            item_weight REAL NOT NULL DEFAULT 0.0,
             needed_stock INTEGER NOT NULL DEFAULT 0,
-            current_stock INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (item_id) REFERENCES items(item_id)
+            current_stock INTEGER NOT NULL DEFAULT 0
         );""",
 
-        # Per-container calibration parameters for converting raw sensor weight.
-        """CREATE TABLE IF NOT EXISTS container_calibration (
+        # Manually set container ID, with a foreign key reference to items table for item_id
+        '''CREATE TABLE IF NOT EXISTS containers (
             container_id INTEGER PRIMARY KEY,
-            empty_bin_weight_g REAL NOT NULL DEFAULT 0.0,
-            scale_factor REAL NOT NULL DEFAULT 1.0,
-            min_detectable_weight_g REAL NOT NULL DEFAULT 0.0,
-            rounding_mode TEXT NOT NULL DEFAULT 'round',
-            FOREIGN KEY (container_id) REFERENCES containers(container_id)
-        );""",
+            container_weight REAL NOT NULL DEFAULT 0.0
+        );
+        ''',
+
+        # FOREIGN KEY constraint so that the container_id in item_list must exist in containers and item_id must exist in items
+        '''CREATE TABLE IF NOT EXISTS item_list (
+            container_id TEXT NOT NULL REFERENCES containers(container_id),
+            item_id INTEGER NOT NULL REFERENCES items(item_id),
+            PRIMARY KEY (container_id, item_id)
+        );''',
 
         # Time-series history for troubleshooting and analytics.
         """CREATE TABLE IF NOT EXISTS sensor_events (
@@ -76,25 +70,24 @@ def database_init():
         print("Failed to create tables:", e)
 
 
-def get_item_id(container_id):
+def get_item_ids(container_id):
     """
-    Get the item ID for a container
+    Get the item ID(s) for a container
     """
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
-            cur.execute('SELECT item_id FROM containers WHERE container_id =?', (container_id,))
-            row = cur.fetchone()
-            if row:
-                return row[0] # row ID not the touple
-            return None
+            cur.execute('SELECT item_id FROM item_list WHERE container_id = ?', (container_id,))
+            row = cur.fetchall()
+            return [item_id for item_id, in row]  # Return a list of item IDs (empty list if none)
     except sqlite3.OperationalError as e:
         print(e)
+        return []
 
 
-def get_item_weight(container_id):
+def get_item_weight(item_id):
     """
-    Get the configured item weight for a container.
+    Get the configured item weight for an item.
 
     Returns None when the container is not found.
     """
@@ -103,10 +96,9 @@ def get_item_weight(container_id):
             cur = conn.cursor()
             cur.execute(
                 """SELECT i.item_weight
-                FROM containers c
-                JOIN items i ON c.item_id = i.item_id
-                WHERE c.container_id = ?""",
-                (container_id,),
+                FROM items i
+                WHERE i.item_id = ?""",
+                (item_id,),
             )
             row = cur.fetchone()
             if row:
@@ -116,9 +108,32 @@ def get_item_weight(container_id):
         print(e)
         return None
 
+def get_container_weight(container_id):
+    """
+    Get the configured container weight for a container.
+
+    Returns None when the container is not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT container_weight
+                FROM containers
+                WHERE container_id = ?""",
+                (container_id,),
+            )
+            row = cur.fetchone()
+            if row:
+                return float(row[0])
+            return None
+    except sqlite3.OperationalError as e:
+        print("error occurred while fetching container weight:", e)
+        return None
+
 def find_container(container_id):
     """
-    Find a container in the database by its ID.
+    Find a container in the database by its ID. Returns a dictionary with item and container details or None if not found.
 
     @throws sqlite3.OperationalError if the database operation fails.
     @return a dictionary with container details or None if not found.
@@ -127,45 +142,145 @@ def find_container(container_id):
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row  # access columns by name
             cur = conn.cursor()
-            # JOIN connects two tables based on a common column to get item name from items table and container details
-            cur.execute(
-                """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
+            cur.execute("""
+                SELECT 
+                    c.container_id,
+                    i.item_id,
+                    i.item_name,
+                    i.item_weight,
+                    i.needed_stock,
+                    i.current_stock
                 FROM containers c
-                JOIN items i ON c.item_id = i.item_id
-                WHERE c.container_id = ?""", (container_id,))
-            row = cur.fetchone() # returns a single row or None
+                JOIN item_list il ON c.container_id = il.container_id
+                JOIN items i      ON il.item_id = i.item_id
+                WHERE c.container_id = ?;
+            """, (container_id,))
+
+            rows = cur.fetchall()
+
+            result = {
+                "container_id": container_id,
+                "items": [
+                    {
+                        "item_id":       r["item_id"],
+                        "item_name":     r["item_name"],
+                        "item_weight":   r["item_weight"],
+                        "needed_stock":  r["needed_stock"],
+                        "current_stock": r["current_stock"],
+                    }
+                    for r in rows
+                ]
+            }
+
+            print("Database query result for container {}: {}".format(container_id, result))
+            # adding stock level to each item in the container details for use in the UI
+            for item in result["items"]:
+                item["stock_level"] = get_stock_level(item["item_id"])
+
+            if result["items"]:  # Only return if we found at least one item for the container
+                return result
+            return None
+    except sqlite3.OperationalError as e:
+        print(e)
+        return None
+    
+def find_item(item_id):
+    """
+    Find an item in the database by its ID. Returns a dictionary with item details or None if not found.
+
+    @throws sqlite3.OperationalError if the database operation fails.
+    @return a dictionary with item details or None if not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row  # access columns by name
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT item_id, item_name, item_weight, needed_stock, current_stock
+                FROM items
+                WHERE item_id = ?
+            """, (item_id,))
+
+            row = cur.fetchone()
             if row:
-                return dict(row) # convert to dictionary
+                return dict(row)
             return None
     except sqlite3.OperationalError as e:
         print(e)
         return None
 
-def get_stock_level(container_id):
+def get_all_container_ids():
     """
-    Returns Red, Yellow, or Green based on stock levels.
+    Returns a list of all container IDs in the database.
     """
-    container = find_container(container_id)
-    if container:
-        if container["current_stock"] == 0:
-            return "Red"
-        elif container["current_stock"] <= container["needed_stock"] * 0.5:
-            return "Yellow"
-    return "Green"
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT container_id FROM containers")
+            return [row[0] for row in cur.fetchall()]
+    except sqlite3.OperationalError as e:
+        print(e)
+        return []
 
-def get_stock(container_id):
+
+def get_num_containers():
     """
-    Returns the current stock of the container or -1 if we can't find the container.
+    Get the total number of containers in the database.
+
+    @throws sqlite3.OperationalError if the database operation fails.
+    @return the total count of containers as an integer.
     """
-    container = find_container(container_id)
-    if container:
-        return container["current_stock"]
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM containers")
+            count = cur.fetchone()[0] # fetchone returns a tuple like (count,)
+            return count
+    except sqlite3.OperationalError as e:
+        print(e)
+        return 0
+
+def get_stock(item_id):
+    """
+    Returns the current stock of the item or -1 if we can't find the item.
+    """
+    item = find_item(item_id)
+    if item:
+        return item["current_stock"]
     return -1
 
 
-def set_stock(container_id, new_stock):
+def get_stock_level(item_id):
     """
-    Sets the current_stock of a container to an absolute value.
+    Returns 0 if out of stock, 1 if low stock, and 2 if in stock.
+    Changed to allow iteration over multiple items in a container, and use the lowest stock level to drive the button colour.
+    """
+    item = find_item(item_id)
+    if item:
+        if item["current_stock"] == 0:
+            return 0
+        elif item["current_stock"] <= item["needed_stock"] * 0.5:
+            return 1
+    return 2
+
+
+def get_container_stock_level(container_id):
+    """
+    Returns the lowest stock level for all items in a container.
+    """
+    item_ids = get_item_ids(container_id)
+    print("Item IDs for container {}: {}".format(container_id, item_ids))
+    lowest_stock_level = 2
+    for item in item_ids:
+        stock_level = get_stock_level(item)
+        if stock_level is not None and stock_level < lowest_stock_level:
+            lowest_stock_level = stock_level
+    return lowest_stock_level
+
+
+def set_stock(item_id, new_stock):
+    """
+    Sets the current_stock of an item to an absolute value.
     """
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
@@ -174,8 +289,8 @@ def set_stock(container_id, new_stock):
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
             cur.execute(
-                "UPDATE containers SET current_stock = ? WHERE container_id = ?",
-                (new_stock, container_id),
+                "UPDATE items SET current_stock = ? WHERE item_id = ?",
+                (new_stock, item_id),
             )
             conn.commit()
             return cur.rowcount > 0
@@ -184,16 +299,16 @@ def set_stock(container_id, new_stock):
         return False
 
 
-def change_stock(container_id, change_amount):
+def change_stock(item_id, change_amount):
     """
-    Adjusts stock of a container by change_amount.
+    Adjusts stock of an item by change_amount (positive or negative).
     """
-    container = find_container(container_id)
-    if container is None:
-        print(f"Error: Container with ID {container_id} not found.")
+    item = find_item(item_id)
+    if item is None:
+        print(f"Error: Item with ID {item_id} not found.")
         return False
 
-    new_stock = container["current_stock"] + change_amount
+    new_stock = item["current_stock"] + change_amount
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
         return False
@@ -201,11 +316,9 @@ def change_stock(container_id, change_amount):
     try:
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
-            # Update the current_stock for the specified container_id
-            cur.execute('UPDATE containers SET current_stock = ? WHERE container_id = ?', (new_stock, container_id))
+            cur.execute('UPDATE items SET current_stock = ? WHERE item_id = ?', (new_stock, item_id))
             conn.commit()
-            print(f"Stock updated successfully for container ID {container_id}. New stock: {new_stock}")
-            return True
+            return cur.rowcount > 0
     except sqlite3.OperationalError as e:
         print(f"Database error: {e}")
         return False
@@ -229,9 +342,12 @@ def export_to_email(receiver_email):
     try:
         with sqlite3.connect(DB_PATH) as conn:
 
-            query = """SELECT c.container_id, i.item_name, c.needed_stock, c.current_stock
-                    FROM containers c
-                    JOIN items i ON c.item_id = i.item_id"""
+            query = """
+                SELECT i.item_id, il.container_id, i.item_name, i.needed_stock, i.current_stock
+                FROM items i
+                JOIN item_list il ON i.item_id = il.item_id
+                ORDER BY il.container_id, i.item_id
+            """
 
             df = pd.read_sql_query(query, conn)
     except sqlite3.OperationalError as e:
@@ -262,111 +378,48 @@ def export_to_email(receiver_email):
 def import_from_csv(csv_file_path):
     """
     Imports inventory data from a CSV file and updates the database.
-    The CSV file should have columns: container_id, item_name, needed_stock, current_stock
+    The CSV file should have columns: item_id, container_id, item_name, item_weight, needed_stock, current_stock
     """
     try:
         df = pd.read_csv(csv_file_path)
         with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
-            for _, row in df.iterrows():
-                # Check if item exists, if not insert it
-                cur.execute('SELECT item_id FROM items WHERE item_name = ?', (row['item_name'],))
-                item = cur.fetchone()
-                if item:
-                    item_id = item[0]
-                else:
-                    cur.execute('INSERT INTO items (item_name) VALUES (?)', (row['item_name'],))
-                    item_id = cur.lastrowid
 
-                # Update or insert container
-                cur.execute('SELECT container_id FROM containers WHERE container_id = ?', (row['container_id'],))
-                container = cur.fetchone()
-                if container:
-                    cur.execute('''UPDATE containers
-                                   SET item_id = ?, needed_stock = ?, current_stock = ?
-                                   WHERE container_id = ?''',
-                                (item_id, row['needed_stock'], row['current_stock'], row['container_id']))
-                else:
-                    cur.execute('''INSERT INTO containers (container_id, item_id, needed_stock, current_stock)
-                                   VALUES (?, ?, ?, ?)''',
-                                (row['container_id'], item_id, row['needed_stock'], row['current_stock']))
+            # Clear existing data before reimporting
+            cur.execute("DELETE FROM item_list")
+            cur.execute("DELETE FROM items")
+            cur.execute("DELETE FROM containers")
+
+            for _, row in df.iterrows():
+                # Insert or ignore the container
+                cur.execute("""
+                    INSERT OR IGNORE INTO containers (container_id)
+                    VALUES (?)
+                """, (row['container_id'],))
+
+                # Insert or update the item (upsert)
+                cur.execute("""
+                    INSERT INTO items (item_name, item_weight, needed_stock, current_stock)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(item_name) DO UPDATE SET
+                        item_weight = excluded.item_weight,
+                        needed_stock = excluded.needed_stock,
+                        current_stock = excluded.current_stock
+                """, (row['item_name'], row['item_weight'], row['needed_stock'], row['current_stock']))
+
+                # Get the item_id (whether it was just inserted or already existed)
+                cur.execute("SELECT item_id FROM items WHERE item_name = ?", (row['item_name'],))
+                item_id = cur.fetchone()[0]
+
+                # Link item to container in item_list
+                cur.execute("""
+                    INSERT OR IGNORE INTO item_list (container_id, item_id)
+                    VALUES (?, ?)
+                """, (row['container_id'], item_id))
             conn.commit()
         return "Import successful!"
     except Exception as e:
         return "Unable to import data."
-
-
-def get_container_calibration(container_id):
-    """
-    Get per-container calibration values.
-
-    Returns defaults when no calibration row exists.
-    """
-    defaults = {
-        "empty_bin_weight_g": 0.0,
-        "scale_factor": 1.0,
-        "min_detectable_weight_g": 0.0,
-        "rounding_mode": "round",
-    }
-
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT empty_bin_weight_g, scale_factor, min_detectable_weight_g, rounding_mode
-                FROM container_calibration
-                WHERE container_id = ?""",
-                (container_id,),
-            )
-            row = cur.fetchone()
-            if row:
-                return dict(row)
-            return defaults
-    except sqlite3.OperationalError:
-        # Keep compatibility with databases created before calibration table existed.
-        return defaults
-
-
-def upsert_container_calibration(
-    container_id,
-    empty_bin_weight_g=0.0,
-    scale_factor=1.0,
-    min_detectable_weight_g=0.0,
-    rounding_mode="round",
-):
-    """
-    Insert or update per-container calibration values.
-    """
-    try:
-        with sqlite3.connect(DB_PATH) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                """INSERT INTO container_calibration (
-                    container_id,
-                    empty_bin_weight_g,
-                    scale_factor,
-                    min_detectable_weight_g,
-                    rounding_mode
-                ) VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(container_id) DO UPDATE SET
-                    empty_bin_weight_g = excluded.empty_bin_weight_g,
-                    scale_factor = excluded.scale_factor,
-                    min_detectable_weight_g = excluded.min_detectable_weight_g,
-                    rounding_mode = excluded.rounding_mode""",
-                (
-                    container_id,
-                    float(empty_bin_weight_g),
-                    float(scale_factor),
-                    float(min_detectable_weight_g),
-                    rounding_mode,
-                ),
-            )
-            conn.commit()
-            return True
-    except sqlite3.OperationalError as e:
-        print(f"Database error: {e}")
-        return False
 
 
 def record_sensor_event(
@@ -410,49 +463,6 @@ def record_sensor_event(
         # Keep compatibility with databases created before sensor_events table existed.
         return False
 
-
-def update_stock_from_weight(container_id, measured_weight_g):
-    """
-    Converts measured weight (grams) into item count, then updates stock.
-
-    Assumption: item_weight stored in DB is grams per unit.
-    """
-    if measured_weight_g < 0:
-        print("Error: measured_weight_g cannot be negative.")
-        return False
-
-    item_weight_g = get_item_weight(container_id)
-    if item_weight_g is None:
-        print(f"Error: No item configured for container ID {container_id}.")
-        return False
-
-    if item_weight_g <= 0:
-        print(f"Error: Invalid item weight ({item_weight_g}) for container ID {container_id}.")
-        return False
-
-    calibration = get_container_calibration(container_id)
-    empty_bin_weight_g = float(calibration["empty_bin_weight_g"])
-    scale_factor = float(calibration["scale_factor"])
-    min_detectable_weight_g = float(calibration["min_detectable_weight_g"])
-    rounding_mode = calibration["rounding_mode"]
-
-    if scale_factor <= 0:
-        print(f"Error: Invalid scale_factor ({scale_factor}) for container ID {container_id}.")
-        return False
-
-    net_weight_g = max(0.0, (measured_weight_g - empty_bin_weight_g) * scale_factor)
-    if net_weight_g < min_detectable_weight_g:
-        net_weight_g = 0.0
-
-    ratio = net_weight_g / item_weight_g
-    if rounding_mode == "floor":
-        calculated_stock = int(ratio)
-    elif rounding_mode == "ceil":
-        calculated_stock = int(ratio) if ratio == int(ratio) else int(ratio) + 1
-    else:
-        calculated_stock = int(round(ratio))
-
-    return set_stock(container_id, calculated_stock)
 
 # Main Function to initialize database
 # if __name__ == "__main__":

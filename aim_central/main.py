@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import QApplication, QWidget
-from view.HomeScreen import MainWindow
-from controller.Inventory import Controller
-from logic.CentralSystem import CentralSystem
-from utils.logger import init_logging
-# Only needed for access to command line arguments
+from aim_central.view.HomeScreen import MainWindow
+from aim_central.controller.Inventory import Controller
+from aim_central.logic.CentralSystem import CentralSystem
+from aim_central.logic.CanDatabaseBridge import CanDatabaseBridge
+from aim_central.drivers.gpsDriver import GeofenceMonitor
+from aim_central.utils.logger import init_logging
 import sys
 
 # Initialize logging
@@ -11,26 +12,28 @@ logger = init_logging()
 
 logger.info("Starting AIM Central System...")
 
-# You need one (and only one) QApplication instance per application.
-# Pass in sys.argv to allow command line arguments for your app.
-# If you know you won't use command line arguments QApplication([]) works too.
 app = QApplication(sys.argv)
 
 model = CentralSystem()
+model.import_db("aim_central/SimpleSampleCSV.csv")
+
 view = MainWindow(model)
 controller = Controller(view)
-
 controller.launch(model)
 
+# Create the CAN bridge and wire the geofence to start/stop it.
+bridge = CanDatabaseBridge(can_channel='can0', bitrate=500000)
+monitor = GeofenceMonitor(on_enter=bridge.start, on_exit=bridge.stop)
+monitor.start()
+controller.set_bridge(bridge)
 
 logger.info("AIM Central System launched successfully.")
 
-# Create a Qt widget, which will be our window.
 window = view
-logger.debug("Main window created.")
-window.show()  # IMPORTANT!!!!! Windows are hidden by default.
-logger.debug("Main window shown.")
+window.show()
 
-# Start the event loop.
-logger.debug("Starting the event loop.")
-app.exec()
+# Qt event loop keeps everything alive; clean up on exit.
+exit_code = app.exec()
+monitor.stop()
+bridge.stop()
+sys.exit(exit_code)

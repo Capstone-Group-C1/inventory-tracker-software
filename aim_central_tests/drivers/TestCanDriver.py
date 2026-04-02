@@ -177,15 +177,15 @@ class TestParseIncoming:
         driver.bus.recv.return_value = make_can_message(bin_id=0, weight_g=1.0, tare_flag=TARE_NONE)
         assert driver.receive()["tare_flag"] == "none"
 
-    def test_parses_tare_flag_success(self):
+    def test_tare_flag_always_none_until_firmware_implements(self):
+        # Tare flag byte is intentionally ignored until firmware implements the protocol.
+        # All incoming tare flag values should return "none" regardless of byte value.
         driver = self._make_driver()
         driver.bus.recv.return_value = make_can_message(bin_id=0, weight_g=0.0, tare_flag=TARE_SUCCESS)
-        assert driver.receive()["tare_flag"] == "success"
+        assert driver.receive()["tare_flag"] == "none"
 
-    def test_parses_tare_flag_fail(self):
-        driver = self._make_driver()
         driver.bus.recv.return_value = make_can_message(bin_id=0, weight_g=0.0, tare_flag=TARE_FAIL)
-        assert driver.receive()["tare_flag"] == "fail"
+        assert driver.receive()["tare_flag"] == "none"
 
     def test_returns_none_for_short_message(self):
         driver = self._make_driver()
@@ -202,10 +202,11 @@ class TestParseIncoming:
         driver.bus.recv.return_value = make_can_message(bin_id=0, weight_g=1.0, status=0xFF)
         assert driver.receive()["status"] == "unknown"
 
-    def test_unknown_tare_code_returns_unknown(self):
+    def test_unknown_tare_code_returns_none(self):
+        # Tare flag is ignored — unknown codes also return "none".
         driver = self._make_driver()
         driver.bus.recv.return_value = make_can_message(bin_id=0, weight_g=1.0, tare_flag=0xFF)
-        assert driver.receive()["tare_flag"] == "unknown"
+        assert driver.receive()["tare_flag"] == "none"
 
 
 # ---------------------------------------------------------------------------

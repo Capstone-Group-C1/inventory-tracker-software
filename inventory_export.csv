@@ -1,0 +1,4 @@
+container_id,item_name,needed_stock,current_stock
+1,Resistor,100,50
+2,Capacitor,50,60
+3,LED,100,0

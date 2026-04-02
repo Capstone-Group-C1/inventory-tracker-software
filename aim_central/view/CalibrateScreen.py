@@ -5,15 +5,20 @@ from PyQt6.QtWidgets import (
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
-    QPushButton
+    QScrollArea,
+    QPushButton,
 )
+
+from aim_central.view.ContainerSettingsWidget import ContainerSettingsWidget
+from aim_central.view.TopBarLayout import TopBarLayout
 
 class CalibrateWindow(QMainWindow):
     def __init__(self, model):
         super().__init__()
         self.setWindowTitle("Weight Calibration Settings")
         self.resize(800, 600)
-        self.container_buttons_list = []
+        self.container_widgets_list = [ContainerSettingsWidget(model, 0)] # 1 indexed for ease of use with container ids, index 0 is not used
+        self.row_layouts = []
         self.model = model # read only
         self.features = None
 
@@ -43,24 +48,98 @@ class CalibrateWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.button_action2)
 
-        layout1 = QVBoxLayout()
-        layout2 = QHBoxLayout()
-        layout3 = QHBoxLayout()
+        scroll = QScrollArea()
+        container = QWidget()
+        mainLayout = QVBoxLayout()
+        self.topBarLayout = TopBarLayout("settings")
+        row1Containers = QHBoxLayout()
 
-        for i in range(4):
-            container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-            layout2.addWidget(container_button)
+        
+        mainLayout.addLayout(self.topBarLayout)
+        mainLayout.addSpacing(10)
+        mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        layout1.addLayout(layout2)
-        layout1.addSpacing(20)
+        num_containers = model.getNumContainers()
+        containers_per_row = 5
 
-        for i in range(4, 8):
-            container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-            layout3.addWidget(container_button)
+        if num_containers < 4:
+                containers_per_row = num_containers
+        elif num_containers % 3 == 0:
+            containers_per_row = 3
+        elif num_containers % 4 == 0 or num_containers == 7:
+            containers_per_row = 4
 
-        layout1.addLayout(layout3)
-        layout1.addSpacing(20)
+        for i in range(1, containers_per_row + 1):
+            self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+            row1Containers.addWidget(self.container_widgets_list[i])
 
+        mainLayout.addLayout(row1Containers)
+        self.row_layouts.append(row1Containers)
+
+        if num_containers/containers_per_row >= 1:
+            mainLayout.addSpacing(20)
+            row2Containers = QHBoxLayout()
+
+            second_row_containers = containers_per_row
+            if num_containers < 2*containers_per_row:
+                second_row_containers = num_containers - containers_per_row
+
+            for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
+                self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+                row2Containers.addWidget(self.container_widgets_list[i])
+
+            mainLayout.addLayout(row2Containers)
+            self.row_layouts.append(row2Containers)
+            mainLayout.addSpacing(20)
+
+        # up to 3 rows, 15 container max support
+        if num_containers/containers_per_row >= 2:
+            mainLayout.addSpacing(20)
+            row3Containers = QHBoxLayout()
+
+            third_row_containers = containers_per_row
+            if num_containers < 3*containers_per_row:
+                third_row_containers = num_containers - 2*containers_per_row
+
+            for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
+                self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+                row3Containers.addWidget(self.container_widgets_list[i])
+
+            mainLayout.addLayout(row3Containers)
+            self.row_layouts.append(row3Containers)
+            mainLayout.addSpacing(20)
+        
+
+        self.tareAllContainers = QPushButton("Tare All Containers")
+        self.tareAllContainers.setFixedHeight(50)
+        self.tareAllContainers.setStyleSheet("padding: 10px 20px; font-style: bold;")  # Override padding to make text visible
+        mainLayout.addWidget(self.tareAllContainers, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+        container.setLayout(mainLayout)
+        scroll.setWidget(container)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff) # Disable horizontal scrolling
+        self.setCentralWidget(scroll)
+    
+    def refreshContainerSettings(self):
+        num_containers = self.model.getNumContainers()
+        for i in range(1, num_containers + 1):
+            old_widget = self.container_widgets_list[i]
+            new_widget = ContainerSettingsWidget(self.model, i)
+            new_widget.addFeatures(self.features)
+
+            # find which row layout contains this widget
+            for row_layout in self.row_layouts:
+                idx = row_layout.indexOf(old_widget)
+                if idx != -1:
+                    row_layout.removeWidget(old_widget)
+                    old_widget.deleteLater()
+                    row_layout.insertWidget(idx, new_widget)
+                    break
+
+            self.container_widgets_list[i] = new_widget
+            
         widget = QWidget()
         widget.setLayout(layout1)
         self.setCentralWidget(widget)
@@ -73,4 +152,10 @@ class CalibrateWindow(QMainWindow):
         self.features = features
         self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
         self.button_action2.triggered.connect(lambda: self.features.toggleGPSWindow(self))
+        self.tareAllContainers.clicked.connect(lambda: self.features.tareAllContainers())
+
+        self.topBarLayout.addFeatures(features)
+        
+        for container_widget in self.container_widgets_list:
+            container_widget.addFeatures(features)
 
