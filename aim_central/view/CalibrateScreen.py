@@ -16,6 +16,7 @@ class CalibrateWindow(QMainWindow):
         self.setWindowTitle("Weight Calibration Settings")
         self.resize(800, 600)
         self.container_widgets_list = [ContainerSettingsWidget(model, 0)] # 1 indexed for ease of use with container ids, index 0 is not used
+        self.row_layouts = []
         self.model = model # read only
         self.features = None
 
@@ -46,7 +47,7 @@ class CalibrateWindow(QMainWindow):
         file_menu.addAction(self.button_action2)
 
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout()
+        self.topBarLayout = TopBarLayout("settings")
         row1Containers = QHBoxLayout()
 
         
@@ -69,6 +70,7 @@ class CalibrateWindow(QMainWindow):
             row1Containers.addWidget(self.container_widgets_list[i])
 
         mainLayout.addLayout(row1Containers)
+        self.row_layouts.append(row1Containers)
 
         if num_containers/containers_per_row >= 1:
             mainLayout.addSpacing(20)
@@ -82,6 +84,7 @@ class CalibrateWindow(QMainWindow):
                 row2Containers.addWidget(self.container_widgets_list[i])
 
             mainLayout.addLayout(row2Containers)
+            self.row_layouts.append(row2Containers)
             mainLayout.addSpacing(20)
 
         # up to 3 rows, 15 container max support
@@ -97,14 +100,39 @@ class CalibrateWindow(QMainWindow):
                 row3Containers.addWidget(self.container_widgets_list[i])
 
             mainLayout.addLayout(row3Containers)
+            self.row_layouts.append(row3Containers)
             mainLayout.addSpacing(20)
 
         widget = QWidget()
         widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
+    
+    def refreshContainerSettings(self):
+        num_containers = self.model.getNumContainers()
+        for i in range(1, num_containers + 1):
+            old_widget = self.container_widgets_list[i]
+            new_widget = ContainerSettingsWidget(self.model, i)
+            new_widget.addFeatures(self.features)
+
+            # find which row layout contains this widget
+            for row_layout in self.row_layouts:
+                idx = row_layout.indexOf(old_widget)
+                if idx != -1:
+                    row_layout.removeWidget(old_widget)
+                    old_widget.deleteLater()
+                    row_layout.insertWidget(idx, new_widget)
+                    break
+
+            self.container_widgets_list[i] = new_widget
+            
 
     def addFeatures(self, features):
         self.features = features
         self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
         self.button_action2.triggered.connect(lambda: self.features.toggleGPSWindow(self))
+
+        self.topBarLayout.addFeatures(features)
+        
+        for container_widget in self.container_widgets_list:
+            container_widget.addFeatures(features)
 

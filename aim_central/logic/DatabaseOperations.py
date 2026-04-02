@@ -128,7 +128,7 @@ def get_container_weight(container_id):
                 return float(row[0])
             return None
     except sqlite3.OperationalError as e:
-        print(e)
+        print("error occurred while fetching container weight:", e)
         return None
 
 def find_container(container_id):
@@ -399,12 +399,12 @@ def import_from_csv(csv_file_path):
 
                 # Insert or update the item (upsert)
                 cur.execute("""
-                    INSERT INTO items (item_name, needed_stock, current_stock)
-                    VALUES (?, ?, ?)
+                    INSERT INTO items (item_name, item_weight, needed_stock, current_stock)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT(item_name) DO UPDATE SET
                         needed_stock = excluded.needed_stock,
                         current_stock = excluded.current_stock
-                """, (row['item_name'], row['needed_stock'], row['current_stock']))
+                """, (row['item_name'], row['item_weight'], row['needed_stock'], row['current_stock']))
 
                 # Get the item_id (whether it was just inserted or already existed)
                 cur.execute("SELECT item_id FROM items WHERE item_name = ?", (row['item_name'],))

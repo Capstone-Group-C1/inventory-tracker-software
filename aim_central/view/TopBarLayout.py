@@ -9,9 +9,10 @@ from view.TimeWidget import TimeDisplay
 
 
 class TopBarLayout(QHBoxLayout):
-    def __init__(self):
+    def __init__(self, page):
         super().__init__()
         self.features = None
+        self.page = page
 
         logo = QSvgWidget("aim_central/AIMlogo.svg")
         logo.setFixedSize(500, 100)
@@ -41,5 +42,10 @@ class TopBarLayout(QHBoxLayout):
 
     
     def addFeatures(self, features):
-        self.refresh_button.clicked.connect(lambda: features.refreshContainerButtons())
+        if self.page == "home":
+            self.refresh_button.clicked.connect(lambda: features.refreshContainerButtons())
+        elif self.page == "settings":
+            self.refresh_button.clicked.connect(lambda: features.refreshContainerSettings())
+        elif self.page == "gps":
+            self.refresh_button.clicked.connect(lambda: features.refreshGPSSettings())
         

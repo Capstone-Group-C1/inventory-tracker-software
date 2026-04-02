@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(button_action)
 
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout()
+        self.topBarLayout = TopBarLayout("home")
         row1Containers = QHBoxLayout()
 
         
@@ -169,7 +169,9 @@ class MainWindow(QMainWindow):
             stockLevel = self.model.getContainerStockLevel(containerId)
             button.stockLevel = stockLevel
             self.updateContainerDisplay(containerId, stockLevel)
-
+    
+    def refreshContainerSettings(self):
+        self.calibrateWindow.refreshContainerSettings()
 
     def addFeatures(self, features):
         self.features = features
