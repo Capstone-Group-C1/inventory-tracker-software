@@ -65,7 +65,6 @@ class MainWindow(QMainWindow):
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()
-        print("Number of containers in system: ", num_containers)
         containers_per_row = 5
 
         if num_containers < 4:
@@ -83,18 +82,14 @@ class MainWindow(QMainWindow):
         mainLayout.addLayout(row1Containers)
 
         if num_containers/containers_per_row >= 1:
-            print("Adding second row of containers")
             mainLayout.addSpacing(20)
             row2Containers = QHBoxLayout()
 
             if num_containers < 2*containers_per_row:
-                print("Less than 2 rows of containers, only adding ", num_containers - containers_per_row, " containers to second row")
                 second_row_containers = num_containers - containers_per_row
 
             for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
-                print("Adding container ", i, " to second row")
                 stock_level = model.getContainerStockLevel(i)
-                print("Stock level for container ", i, ": ", stock_level)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
                 row2Containers.addWidget(self.container_buttons_list[i])
 
@@ -111,7 +106,6 @@ class MainWindow(QMainWindow):
 
             for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
                 stock_level = model.getContainerStockLevel(i)
-                print("Stock level for container ", i, ": ", stock_level)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
                 row3Containers.addWidget(self.container_buttons_list[i])
 

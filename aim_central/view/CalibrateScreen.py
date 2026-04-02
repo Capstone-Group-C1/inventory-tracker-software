@@ -1,18 +1,21 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
-    QPushButton
 )
+
+from view.ContainerSettingsWidget import ContainerSettingsWidget
+from view.TopBarLayout import TopBarLayout
 
 class CalibrateWindow(QMainWindow):
     def __init__(self, model):
         super().__init__()
         self.setWindowTitle("Weight Calibration Settings")
         self.resize(800, 600)
-        self.container_buttons_list = []
+        self.container_widgets_list = [ContainerSettingsWidget(model, 0)] # 1 indexed for ease of use with container ids, index 0 is not used
         self.model = model # read only
         self.features = None
 
@@ -42,10 +45,14 @@ class CalibrateWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.button_action2)
 
-        layout1 = QVBoxLayout()
-        layout2 = QHBoxLayout()
-        layout3 = QHBoxLayout()
+        mainLayout = QVBoxLayout()
+        self.topBarLayout = TopBarLayout()
+        row1Containers = QHBoxLayout()
 
+        
+        mainLayout.addLayout(self.topBarLayout)
+        mainLayout.addSpacing(50)
+        mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()
         containers_per_row = 5
@@ -54,41 +61,46 @@ class CalibrateWindow(QMainWindow):
                 containers_per_row = num_containers
         elif num_containers % 3 == 0:
             containers_per_row = 3
-        elif num_containers % 4 == 0:
+        elif num_containers % 4 == 0 or num_containers == 7:
             containers_per_row = 4
 
-        for i in range(containers_per_row):
-            container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-            layout2.addWidget(container_button)
+        for i in range(1, containers_per_row + 1):
+            self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+            row1Containers.addWidget(self.container_widgets_list[i])
 
-        layout1.addLayout(layout2)
+        mainLayout.addLayout(row1Containers)
 
-        if num_containers/containers_per_row >= 2:
-            layout1.addSpacing(20)
-            layout3 = QHBoxLayout()
+        if num_containers/containers_per_row >= 1:
+            mainLayout.addSpacing(20)
+            row2Containers = QHBoxLayout()
 
-            for i in range(containers_per_row, 2*containers_per_row):
-                container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-                layout3.addWidget(container_button)
+            if num_containers < 2*containers_per_row:
+                second_row_containers = num_containers - containers_per_row
 
-            layout1.addLayout(layout3)
-            layout1.addSpacing(20)
+            for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
+                self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+                row2Containers.addWidget(self.container_widgets_list[i])
+
+            mainLayout.addLayout(row2Containers)
+            mainLayout.addSpacing(20)
 
         # up to 3 rows, 15 container max support
-        if num_containers/containers_per_row >= 3:
-            layout1.addSpacing(20)
-            layout4 = QHBoxLayout()
+        if num_containers/containers_per_row >= 2:
+            mainLayout.addSpacing(20)
+            row3Containers = QHBoxLayout()
 
-            for i in range(2*containers_per_row, 3*containers_per_row):
-                container_button = QPushButton(f"Container {i}\nTare: 0.0 g")
-                layout4.addWidget(container_button)
+            if num_containers < 3*containers_per_row:
+                third_row_containers = num_containers - 2*containers_per_row
 
-            layout1.addLayout(layout4)
-            layout1.addSpacing(20)
+            for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
+                self.container_widgets_list.append(ContainerSettingsWidget(model, i))
+                row3Containers.addWidget(self.container_widgets_list[i])
 
+            mainLayout.addLayout(row3Containers)
+            mainLayout.addSpacing(20)
 
         widget = QWidget()
-        widget.setLayout(layout1)
+        widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
 
     def addFeatures(self, features):

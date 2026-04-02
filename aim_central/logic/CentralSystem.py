@@ -6,6 +6,12 @@ class CentralSystem():
 
     def findContainer(self, containerId):
         return db_ops.find_container(containerId)
+    
+    def findItem(self, itemId):
+        return db_ops.find_item(itemId)
+    
+    def getContainerWeight(self, containerId):
+        return db_ops.get_container_weight(containerId)
 
     def getStockLevel(self, item_id):
         return db_ops.get_stock_level(item_id)

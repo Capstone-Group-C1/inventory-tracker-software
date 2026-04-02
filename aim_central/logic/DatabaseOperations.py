@@ -108,6 +108,29 @@ def get_item_weight(item_id):
         print(e)
         return None
 
+def get_container_weight(container_id):
+    """
+    Get the configured container weight for a container.
+
+    Returns None when the container is not found.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT container_weight
+                FROM containers
+                WHERE container_id = ?""",
+                (container_id,),
+            )
+            row = cur.fetchone()
+            if row:
+                return float(row[0])
+            return None
+    except sqlite3.OperationalError as e:
+        print(e)
+        return None
+
 def find_container(container_id):
     """
     Find a container in the database by its ID. Returns a dictionary with item and container details or None if not found.
@@ -124,6 +147,7 @@ def find_container(container_id):
                     c.container_id,
                     i.item_id,
                     i.item_name,
+                    i.item_weight,
                     i.needed_stock,
                     i.current_stock
                 FROM containers c
@@ -140,6 +164,7 @@ def find_container(container_id):
                     {
                         "item_id":       r["item_id"],
                         "item_name":     r["item_name"],
+                        "item_weight":   r["item_weight"],
                         "needed_stock":  r["needed_stock"],
                         "current_stock": r["current_stock"],
                     }
