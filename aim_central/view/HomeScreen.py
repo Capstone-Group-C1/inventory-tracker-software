@@ -142,6 +142,12 @@ class MainWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
+
+        self.showFullScreen()
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.showNormal()
     
     def updateContainerDisplay(self, containerId, stockLevel):
         color_map = {
@@ -180,15 +186,16 @@ class MainWindow(QMainWindow):
 
     def toggleGPSWindow(self, curWindow):
         curWindow.hide()
-        self.GPSSettingsWindow.show()
+        self.GPSSettingsWindow.showFullScreen()
     
     def toggleCalibrateWindow(self, curWindow):
         curWindow.hide()
-        self.calibrateWindow.show()
+        self.calibrateWindow.showFullScreen()
     
     def toggleHomeWindow(self, curWindow):
         curWindow.hide()
         self.show()
+        self.showFullScreen()
     
     def refreshContainerButtons(self):
         for button in self.container_buttons_list:

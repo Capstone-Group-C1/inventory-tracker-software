@@ -49,6 +49,10 @@ class GPSSettingsWindow(QMainWindow):
         widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.showNormal()
+
     def addFeatures(self, features):
             self.features = features
             self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))

@@ -140,6 +140,13 @@ class CalibrateWindow(QMainWindow):
 
             self.container_widgets_list[i] = new_widget
             
+        widget = QWidget()
+        widget.setLayout(layout1)
+        self.setCentralWidget(widget)
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.showNormal()
 
     def addFeatures(self, features):
         self.features = features
