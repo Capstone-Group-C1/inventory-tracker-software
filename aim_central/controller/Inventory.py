@@ -3,6 +3,10 @@ class Controller():
         self.view = view
         self.view.addFeatures(self)
         self.model = None
+        self.bridge = None
+
+    def set_bridge(self, bridge):
+        self.bridge = bridge
 
     def ContainerButtonClick(self, containerId):
         print("container " + str(containerId) + " button clicked")
@@ -16,19 +20,16 @@ class Controller():
     def manualStockChange(self, itemId, newAmt):
         print(f"Manual stock change for item {itemId} to new amount: {newAmt}")
         if self.model:
-            #self.model.updateItemStockLevel(itemId, newAmt) # uncomment when this function is implemented in the model/db
-            #newStockLevel = self.model.getItemStockLevel(itemId) # get new stock level after change
-            #self.view.updateItemDisplay(itemId, newAmt) # also make this function - subset of updateContainerDisplay 
-                                                         # that just updates the stock level display for the item
-            pass
-    
+            self.model.setStock(itemId, newAmt)
+            self.view.refreshContainerButtons()
+            self.view.refreshContainerSettings()
+
     def tareContainer(self, containerId):
         print(f"Tare container {containerId}")
-        if self.model:
-            # self.model.tareBin(containerId) # uncomment when this function is implemented in the model/bridge
-            # after taring, we should update the display for all containers since stock levels may have changed
-            # self.refreshContainerButtons() # also make this function - calls getContainerStockLevel for each container and updates display
-            pass
+        if self.model and self.bridge:
+            self.bridge.tare_single_container(containerId)
+            self.view.refreshContainerButtons()
+            self.view.refreshContainerSettings()
     
     def toggleGPSWindow(self, curWindow):
         self.view.toggleGPSWindow(curWindow)

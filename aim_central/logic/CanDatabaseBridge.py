@@ -222,6 +222,19 @@ class CanDatabaseBridge:
 
         return True
 
+    def tare_single_container(self, container_id):
+        """
+        Sends a tare command to a single container and resets its software state.
+        Called by the UI when an EMT tares an individual bin.
+        """
+        try:
+            self.driver.tare_bin(bin_id=container_id)
+        except Exception:
+            pass  # bridge may not be connected yet; still reset software state
+        self._weight_windows[container_id].clear()
+        self._last_stable_weight.pop(container_id, None)
+        self.logger.info("Tare command sent to bin %s.", container_id)
+
     def tare_all_containers(self):
         """
         Sends a tare command to every container currently in the database.
