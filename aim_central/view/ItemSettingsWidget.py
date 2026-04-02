@@ -16,7 +16,6 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QWidget, QSizePolicy
-from view.TriangleButton import TriangleButton
 
 class ItemSettingsWidget(QWidget):
     def __init__(self, model, item_id, parent=None):

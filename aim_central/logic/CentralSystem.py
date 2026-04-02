@@ -1,4 +1,5 @@
 from . import DatabaseOperations as db_ops
+from . import CanDatabaseBridge as bridge
 
 class CentralSystem():
     def __init__(self):
@@ -28,7 +29,7 @@ class CentralSystem():
     def changeStock(self, item_id, change_amount):
         return db_ops.change_stock(item_id, change_amount)
 
-    def tareAllContainers(self, bridge):
+    def tareAllContainers(self):
         bridge.tare_all_containers()
 
     def getNumContainers(self):

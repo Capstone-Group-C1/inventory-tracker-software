@@ -9,8 +9,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
 )
 
-from view.ContainerSettingsWidget import ContainerSettingsWidget
-from view.TopBarLayout import TopBarLayout
+from aim_central.view.ContainerSettingsWidget import ContainerSettingsWidget
+from aim_central.view.TopBarLayout import TopBarLayout
 
 class CalibrateWindow(QMainWindow):
     def __init__(self, model):

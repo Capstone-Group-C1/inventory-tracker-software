@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
-from view.TopBarLayout import TopBarLayout
+from aim_central.view.TopBarLayout import TopBarLayout
 
 class GPSSettingsWindow(QMainWindow):
     def __init__(self, model):

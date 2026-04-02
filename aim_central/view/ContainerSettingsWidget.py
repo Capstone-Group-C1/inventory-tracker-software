@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy
 )
 
-from view.ItemSettingsWidget import ItemSettingsWidget
+from aim_central.view.ItemSettingsWidget import ItemSettingsWidget
 
 class ContainerSettingsWidget(QGroupBox):
     def __init__(self, model, container_id, parent=None):

@@ -9,11 +9,11 @@ from PyQt6.QtWidgets import (
 )
 
 from PyQt6.QtGui import QColor, QPalette
-from view.ContainerButton import ContainerButton
-from view.ContainerDialog import ContainerDialog
-from view.CalibrateScreen import CalibrateWindow
-from view.GPSSettingsScreen import GPSSettingsWindow 
-from view.TopBarLayout import TopBarLayout
+from aim_central.view.ContainerButton import ContainerButton
+from aim_central.view.ContainerDialog import ContainerDialog
+from aim_central.view.CalibrateScreen import CalibrateWindow
+from aim_central.view.GPSSettingsScreen import GPSSettingsWindow 
+from aim_central.view.TopBarLayout import TopBarLayout
 
 
 class Color(QWidget):

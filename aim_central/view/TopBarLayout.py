@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 )
 
 from PyQt6.QtSvgWidgets import QSvgWidget
-from view.TimeWidget import TimeDisplay
+from aim_central.view.TimeWidget import TimeDisplay
 
 
 class TopBarLayout(QHBoxLayout):
