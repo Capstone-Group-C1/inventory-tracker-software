@@ -16,11 +16,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QWidget
 
-class ContainerButton(QPushButton):
-    def __init__(self, containerId, stockLevel, parent=None):
+class ContainerSettingsWidget(QPushButton):
+    def __init__(self, model, container_id, parent=None):
         super().__init__("", parent)
-        self.containerId = containerId
-        self.stockLevel = stockLevel
+        self.model = model
+        self.container_id = container_id
 
         color_map = {
             "Green": "#4CAF50",
@@ -47,8 +47,6 @@ class ContainerButton(QPushButton):
                 border-radius: 12px;
             }}
         """)
-
-
 
     def addFeatures(self, features):
         self.clicked.connect(lambda: features.ContainerButtonClick(self.containerId))

@@ -25,7 +25,8 @@ def database_init():
 
         # Manually set container ID, with a foreign key reference to items table for item_id
         '''CREATE TABLE IF NOT EXISTS containers (
-            container_id INTEGER PRIMARY KEY
+            container_id INTEGER PRIMARY KEY,
+            container_weight REAL NOT NULL DEFAULT 0.0
         );
         ''',
 

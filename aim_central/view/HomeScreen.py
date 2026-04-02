@@ -1,12 +1,7 @@
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QLabel,
     QMainWindow,
-    QStatusBar,
-    QToolBar,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
@@ -17,6 +12,7 @@ from view.ContainerButton import ContainerButton
 from view.ContainerDialog import ContainerDialog
 from view.CalibrateScreen import CalibrateWindow
 from view.GPSSettingsScreen import GPSSettingsWindow 
+from view.TopBarLayout import TopBarLayout
 
 
 class Color(QWidget):
@@ -59,8 +55,14 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(button_action)
 
-        layout1 = QVBoxLayout()
-        layout2 = QHBoxLayout()
+        mainLayout = QVBoxLayout()
+        self.topBarLayout = TopBarLayout()
+        row1Containers = QHBoxLayout()
+
+        
+        mainLayout.addLayout(self.topBarLayout)
+        mainLayout.addSpacing(50)
+        mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()
         print("Number of containers in system: ", num_containers)
@@ -76,14 +78,14 @@ class MainWindow(QMainWindow):
         for i in range(1, containers_per_row + 1):
             stock_level = model.getContainerStockLevel(i)
             self.container_buttons_list.append(ContainerButton(i, stock_level))
-            layout2.addWidget(self.container_buttons_list[i])
+            row1Containers.addWidget(self.container_buttons_list[i])
 
-        layout1.addLayout(layout2)
+        mainLayout.addLayout(row1Containers)
 
         if num_containers/containers_per_row >= 1:
             print("Adding second row of containers")
-            layout1.addSpacing(20)
-            layout3 = QHBoxLayout()
+            mainLayout.addSpacing(20)
+            row2Containers = QHBoxLayout()
 
             if num_containers < 2*containers_per_row:
                 print("Less than 2 rows of containers, only adding ", num_containers - containers_per_row, " containers to second row")
@@ -94,15 +96,15 @@ class MainWindow(QMainWindow):
                 stock_level = model.getContainerStockLevel(i)
                 print("Stock level for container ", i, ": ", stock_level)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
-                layout3.addWidget(self.container_buttons_list[i])
+                row2Containers.addWidget(self.container_buttons_list[i])
 
-            layout1.addLayout(layout3)
-            layout1.addSpacing(20)
+            mainLayout.addLayout(row2Containers)
+            mainLayout.addSpacing(20)
 
         # up to 3 rows, 15 container max support
         if num_containers/containers_per_row >= 2:
-            layout1.addSpacing(20)
-            layout4 = QHBoxLayout()
+            mainLayout.addSpacing(20)
+            row3Containers = QHBoxLayout()
 
             if num_containers < 3*containers_per_row:
                 third_row_containers = num_containers - 2*containers_per_row
@@ -111,20 +113,20 @@ class MainWindow(QMainWindow):
                 stock_level = model.getContainerStockLevel(i)
                 print("Stock level for container ", i, ": ", stock_level)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
-                layout4.addWidget(self.container_buttons_list[i])
+                row3Containers.addWidget(self.container_buttons_list[i])
 
-            layout1.addLayout(layout4)
-            layout1.addSpacing(20)
+            mainLayout.addLayout(row3Containers)
+            mainLayout.addSpacing(20)
 
         widget = QWidget()
-        widget.setLayout(layout1)
+        widget.setLayout(mainLayout)
         self.setCentralWidget(widget)
     
     def updateContainerDisplay(self, containerId, stockLevel):
         color_map = {
             "Green": "#4CAF50",
-            "Yellow": "#FFEB3B",
-            "Red": "#F44336"
+            "Yellow": "#EAC225",
+            "Red": "#e03333"
         }
 
         stock_color = "Green"
@@ -155,7 +157,6 @@ class MainWindow(QMainWindow):
         dialog = ContainerDialog(container_details, self)
         dialog.exec()
 
-
     def toggleGPSWindow(self, curWindow):
         curWindow.hide()
         self.GPSSettingsWindow.show()
@@ -167,6 +168,13 @@ class MainWindow(QMainWindow):
     def toggleHomeWindow(self, curWindow):
         curWindow.hide()
         self.show()
+    
+    def refreshContainerButtons(self):
+        for button in self.container_buttons_list:
+            containerId = button.containerId
+            stockLevel = self.model.getContainerStockLevel(containerId)
+            button.stockLevel = stockLevel
+            self.updateContainerDisplay(containerId, stockLevel)
 
 
     def addFeatures(self, features):
@@ -175,6 +183,7 @@ class MainWindow(QMainWindow):
         for button in self.container_buttons_list:
             button.addFeatures(features)
         
+        self.topBarLayout.addFeatures(features)
         self.calibrateWindow.addFeatures(features)
         self.GPSSettingsWindow.addFeatures(features)
         

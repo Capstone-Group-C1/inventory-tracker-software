@@ -21,7 +21,7 @@ class ContainerDialog(QDialog):
         layout.addWidget(QLabel(f"Details for Container {self.id}"))
 
         for item in self.contents:
-            stock_color = "green" if item['stock_level'] > 1 else "#D4B100" if item['stock_level'] == 1 else "red"
+            stock_color = "green" if item['stock_level'] > 1 else "#D4B100" if item['stock_level'] == 1 else "#e03333"
             stock_level = "Normal" if item['stock_level'] > 1 else "Low" if item['stock_level'] == 1 else "Empty"
 
             layout.addWidget(QLabel(f"Item Contents: {item['item_name']}"))

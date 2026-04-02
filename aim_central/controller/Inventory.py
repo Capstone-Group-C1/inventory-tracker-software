@@ -21,6 +21,13 @@ class Controller():
     
     def toggleHomeWindow(self, curWindow):
         self.view.toggleHomeWindow(curWindow)
+    
+    def refreshContainerButtons(self):
+        for button in self.view.container_buttons_list:
+            containerId = button.containerId
+            stockLevel = self.model.getContainerStockLevel(containerId)
+            button.stockLevel = stockLevel
+            self.view.updateContainerDisplay(containerId, stockLevel)
 
     def launch(self, model):
         print("Controller launched with model:", model)
