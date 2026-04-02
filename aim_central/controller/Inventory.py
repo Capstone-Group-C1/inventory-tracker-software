@@ -30,6 +30,14 @@ class Controller():
             # self.refreshContainerButtons() # also make this function - calls getContainerStockLevel for each container and updates display
             pass
     
+    def tareAllContainers(self):
+        print("Tare all containers")
+        if self.model:
+            self.model.tareAllContainers() 
+            # after taring, we should update the display for all containers since stock levels may have changed
+            # self.refreshContainerButtons() # also make this function - calls getContainerStockLevel for each container and updates display
+            pass
+    
     def toggleGPSWindow(self, curWindow):
         self.view.toggleGPSWindow(curWindow)
 

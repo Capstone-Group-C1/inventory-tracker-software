@@ -12,6 +12,7 @@ from view.ItemSettingsWidget import ItemSettingsWidget
 class ContainerSettingsWidget(QGroupBox):
     def __init__(self, model, container_id, parent=None):
         super().__init__(parent)
+        self.setFixedWidth(160)  # Fixed width to prevent horizontal scrolling
         self.model = model
         self.item_widgets_list = []
 

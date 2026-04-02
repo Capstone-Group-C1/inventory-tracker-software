@@ -25,7 +25,7 @@ class CentralSystem():
     def changeStock(self, item_id, change_amount):
         return db_ops.change_stock(item_id, change_amount)
 
-    def tareAllBins(self, bridge):
+    def tareAllContainers(self, bridge):
         bridge.tare_all_containers()
 
     def getNumContainers(self):

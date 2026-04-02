@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import (
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
+    QScrollArea,
+    QPushButton,
 )
 
 from view.ContainerSettingsWidget import ContainerSettingsWidget
@@ -46,6 +48,8 @@ class CalibrateWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.button_action2)
 
+        scroll = QScrollArea()
+        container = QWidget()
         mainLayout = QVBoxLayout()
         self.topBarLayout = TopBarLayout("settings")
         row1Containers = QHBoxLayout()
@@ -102,10 +106,19 @@ class CalibrateWindow(QMainWindow):
             mainLayout.addLayout(row3Containers)
             self.row_layouts.append(row3Containers)
             mainLayout.addSpacing(20)
+        
 
-        widget = QWidget()
-        widget.setLayout(mainLayout)
-        self.setCentralWidget(widget)
+        self.tareAllContainers = QPushButton("Tare All Containers")
+        self.tareAllContainers.setFixedHeight(50)
+        self.tareAllContainers.setStyleSheet("padding: 10px 20px; font-style: bold;")  # Override padding to make text visible
+        mainLayout.addWidget(self.tareAllContainers, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+        container.setLayout(mainLayout)
+        scroll.setWidget(container)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff) # Disable horizontal scrolling
+        self.setCentralWidget(scroll)
     
     def refreshContainerSettings(self):
         num_containers = self.model.getNumContainers()
@@ -130,6 +143,7 @@ class CalibrateWindow(QMainWindow):
         self.features = features
         self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
         self.button_action2.triggered.connect(lambda: self.features.toggleGPSWindow(self))
+        self.tareAllContainers.clicked.connect(lambda: self.features.tareAllContainers())
 
         self.topBarLayout.addFeatures(features)
         
