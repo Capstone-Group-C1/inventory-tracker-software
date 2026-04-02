@@ -63,9 +63,9 @@ class CanDatabaseBridge:
         return sum(window) / len(window)
 
     def _stock_level_to_led(self, stock_level):
-        if stock_level == "Red":
+        if stock_level == 0:
             return LED_RED
-        if stock_level == "Yellow":
+        if stock_level == 1:
             return LED_YELLOW
         return LED_GREEN
 
@@ -221,6 +221,19 @@ class CanDatabaseBridge:
             self.driver.set_led(bin_id=bin_id, state=led)
 
         return True
+
+    def tare_single_container(self, container_id):
+        """
+        Sends a tare command to a single container and resets its software state.
+        Called by the UI when an EMT tares an individual bin.
+        """
+        try:
+            self.driver.tare_bin(bin_id=container_id)
+        except Exception:
+            pass  # bridge may not be connected yet; still reset software state
+        self._weight_windows[container_id].clear()
+        self._last_stable_weight.pop(container_id, None)
+        self.logger.info("Tare command sent to bin %s.", container_id)
 
     def tare_all_containers(self):
         """

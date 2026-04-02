@@ -19,6 +19,9 @@ class CentralSystem():
     def getContainerStockLevel(self, containerId):
         return db_ops.get_container_stock_level(containerId)
 
+    def setStock(self, item_id, new_stock):
+        return db_ops.set_stock(item_id, new_stock)
+
     def getStock(self, item_id):
         return db_ops.get_stock(item_id)
     

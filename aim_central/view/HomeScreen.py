@@ -94,6 +94,7 @@ class MainWindow(QMainWindow):
             mainLayout.addSpacing(20)
             row2Containers = QHBoxLayout()
 
+            second_row_containers = containers_per_row
             if num_containers < 2*containers_per_row:
                 second_row_containers = num_containers - containers_per_row
 
@@ -118,6 +119,7 @@ class MainWindow(QMainWindow):
             mainLayout.addSpacing(20)
             row3Containers = QHBoxLayout()
 
+            third_row_containers = containers_per_row
             if num_containers < 3*containers_per_row:
                 third_row_containers = num_containers - 2*containers_per_row
 

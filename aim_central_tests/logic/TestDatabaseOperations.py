@@ -233,21 +233,21 @@ class TestGetStockLevel:
     def test_red_when_stock_is_zero(self, sample_data):
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
             # item_id=3 (LED) has current_stock=0
-            assert DatabaseOperations.get_stock_level(3) == "Red"
+            assert DatabaseOperations.get_stock_level(3) == 0
 
     def test_yellow_when_stock_at_50_percent(self, sample_data):
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
             # item_id=1 (Resistor): needed=100, current=50 → exactly 50%
-            assert DatabaseOperations.get_stock_level(1) == "Yellow"
+            assert DatabaseOperations.get_stock_level(1) == 1
 
     def test_green_when_stock_above_50_percent(self, sample_data):
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
             # item_id=2 (Capacitor): needed=50, current=60 → 120%
-            assert DatabaseOperations.get_stock_level(2) == "Green"
+            assert DatabaseOperations.get_stock_level(2) == 2
 
     def test_green_for_nonexistent_item(self, sample_data):
         with patch.object(DatabaseOperations, 'DB_PATH', sample_data):
-            assert DatabaseOperations.get_stock_level(999) == "Green"
+            assert DatabaseOperations.get_stock_level(999) == 2
 
 
 # ============================================================================
@@ -392,10 +392,10 @@ class TestDatabaseIntegration:
             assert container is not None
 
             # item_id=1: needed=100, current=50 → Yellow
-            assert DatabaseOperations.get_stock_level(1) == "Yellow"
+            assert DatabaseOperations.get_stock_level(1) == 1
 
             DatabaseOperations.change_stock(1, 10)
-            assert DatabaseOperations.get_stock_level(1) == "Green"
+            assert DatabaseOperations.get_stock_level(1) == 2
             assert DatabaseOperations.get_stock(1) == 60
 
     def test_multi_item_container_independent_stock(self, test_db):

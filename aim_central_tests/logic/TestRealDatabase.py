@@ -277,19 +277,19 @@ class TestDatabaseOperations:
         test_db_path, ids = seeded_db
         with patch.object(DatabaseOperations, 'DB_PATH', test_db_path):
             DatabaseOperations.set_stock(ids["adult_glove_id"], 0)
-            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == "Red"
+            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == 0
 
     def test_get_stock_level_yellow(self, seeded_db):
         test_db_path, ids = seeded_db
         with patch.object(DatabaseOperations, 'DB_PATH', test_db_path):
             # needed_stock is 10, so yellow is <= 5
             DatabaseOperations.set_stock(ids["adult_glove_id"], 4)
-            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == "Yellow"
+            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == 1
 
     def test_get_stock_level_green(self, seeded_db):
         test_db_path, ids = seeded_db
         with patch.object(DatabaseOperations, 'DB_PATH', test_db_path):
-            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == "Green"
+            assert DatabaseOperations.get_stock_level(ids["adult_glove_id"]) == 2
 
     def test_get_num_containers(self, seeded_db):
         test_db_path, _ = seeded_db
