@@ -52,7 +52,7 @@ class CalibrateWindow(QMainWindow):
 
         
         mainLayout.addLayout(self.topBarLayout)
-        mainLayout.addSpacing(50)
+        mainLayout.addSpacing(10)
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()

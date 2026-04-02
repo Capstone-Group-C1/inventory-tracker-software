@@ -18,9 +18,13 @@ class TopBarLayout(QHBoxLayout):
         logo.setFixedSize(500, 100)
         self.addWidget(logo, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        self.addStretch()
+
         # Add time display to the top bar
         time_display = TimeDisplay()
         self.addWidget(time_display, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.addSpacing(10)
 
         self.refresh_button = QPushButton("Refresh")
         self.refresh_button.setStyleSheet("""
