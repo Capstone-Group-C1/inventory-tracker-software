@@ -63,9 +63,9 @@ class CanDatabaseBridge:
         return sum(window) / len(window)
 
     def _stock_level_to_led(self, stock_level):
-        if stock_level == "Red":
+        if stock_level == 0:
             return LED_RED
-        if stock_level == "Yellow":
+        if stock_level == 1:
             return LED_YELLOW
         return LED_GREEN
 

@@ -4,7 +4,7 @@ import smtplib
 import ssl
 import pandas as pd
 from email.message import EmailMessage
-from config.config import AIMConfig
+from aim_central.config.config import AIMConfig
 
 # Path for the database file to be created in the same directory
 DB_PATH = os.path.join(os.path.dirname(__file__), AIMConfig.DB_PATH)
@@ -378,7 +378,7 @@ def export_to_email(receiver_email):
 def import_from_csv(csv_file_path):
     """
     Imports inventory data from a CSV file and updates the database.
-    The CSV file should have columns: item_id, container_id, item_name, needed_stock, current_stock
+    The CSV file should have columns: item_id, container_id, item_name, item_weight, needed_stock, current_stock
     """
     try:
         df = pd.read_csv(csv_file_path)
@@ -402,6 +402,7 @@ def import_from_csv(csv_file_path):
                     INSERT INTO items (item_name, item_weight, needed_stock, current_stock)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(item_name) DO UPDATE SET
+                        item_weight = excluded.item_weight,
                         needed_stock = excluded.needed_stock,
                         current_stock = excluded.current_stock
                 """, (row['item_name'], row['item_weight'], row['needed_stock'], row['current_stock']))

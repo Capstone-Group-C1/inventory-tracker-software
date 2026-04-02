@@ -295,7 +295,7 @@ class TestLedFeedback:
             with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.get_item_weight", return_value=50.0):
                 with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.change_stock", return_value=True):
                     with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.get_stock", return_value=9):
-                        with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.get_stock_level", return_value="Yellow"):
+                        with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.get_stock_level", return_value=1):
                             with patch("aim_central.logic.CanDatabaseBridge.DatabaseOperations.record_sensor_event"):
                                 bridge.process_one_message()
 
