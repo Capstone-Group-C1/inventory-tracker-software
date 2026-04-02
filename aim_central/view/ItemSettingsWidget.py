@@ -1,12 +1,6 @@
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QAction, QIcon, QBrush
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QApplication,
-    QCheckBox,
     QLabel,
-    QMainWindow,
-    QStatusBar,
-    QToolBar,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
@@ -14,7 +8,6 @@ from PyQt6.QtWidgets import (
     QSpinBox,
 )
 
-from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QWidget, QSizePolicy
 
 class ItemSettingsWidget(QWidget):
