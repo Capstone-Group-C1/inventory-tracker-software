@@ -43,6 +43,23 @@ class CalibrateWindow(QMainWindow):
 
         menu = self.menuBar()
 
+        menu.setStyleSheet("""
+            QMenuBar {
+                font-size: 24px;
+                background-color: #f0f0f0;
+            }
+            QMenuBar::item {
+                spacing: 10px;
+                padding: 5px 10px;
+                background: transparent;
+            }
+            QMenu {
+                font-size: 22px;
+            }
+        """)
+
+
+
         file_menu = menu.addMenu("&Menu")
         file_menu.addAction(self.button_action)
         file_menu.addSeparator()
@@ -56,7 +73,7 @@ class CalibrateWindow(QMainWindow):
 
         
         mainLayout.addLayout(self.topBarLayout)
-        mainLayout.addSpacing(10)
+
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()
@@ -112,7 +129,7 @@ class CalibrateWindow(QMainWindow):
 
         self.tareAllContainers = QPushButton("Tare All Containers")
         self.tareAllContainers.setFixedHeight(50)
-        self.tareAllContainers.setStyleSheet("padding: 10px 20px; font-style: bold;")  # Override padding to make text visible
+        self.tareAllContainers.setStyleSheet("padding: 10px 20px; font-size: 20px; font-style: bold;")  # Override padding to make text visible
         mainLayout.addWidget(self.tareAllContainers, alignment=Qt.AlignmentFlag.AlignCenter)
 
 
@@ -140,9 +157,9 @@ class CalibrateWindow(QMainWindow):
 
             self.container_widgets_list[i] = new_widget
             
-        widget = QWidget()
-        widget.setLayout(layout1)
-        self.setCentralWidget(widget)
+        #widget = QWidget()
+        #widget.setLayout(layout1)
+        #self.setCentralWidget(widget)
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:

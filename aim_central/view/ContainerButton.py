@@ -35,7 +35,7 @@ class ContainerButton(QPushButton):
             }}
         """)
 
-
+        self.setFixedHeight(200)
 
     def addFeatures(self, features):
         self.clicked.connect(lambda: features.ContainerButtonClick(self.containerId))

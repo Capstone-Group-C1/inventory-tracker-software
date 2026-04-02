@@ -51,6 +51,21 @@ class MainWindow(QMainWindow):
 
         menu = self.menuBar()
 
+        menu.setStyleSheet("""
+            QMenuBar {
+                font-size: 24px;
+                background-color: #f0f0f0;
+            }
+            QMenuBar::item {
+                spacing: 10px;
+                padding: 5px 10px;
+                background: transparent;
+	    }
+            QMenu {
+                font-size: 22px;
+            }
+        """)
+
         file_menu = menu.addMenu("&Menu")
         file_menu.addAction(button_action2)
         file_menu.addSeparator()
@@ -62,7 +77,7 @@ class MainWindow(QMainWindow):
 
         
         mainLayout.addLayout(self.topBarLayout)
-        mainLayout.addSpacing(50)
+        mainLayout.addSpacing(20)
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = model.getNumContainers()

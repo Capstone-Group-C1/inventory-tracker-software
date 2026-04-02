@@ -30,15 +30,17 @@ class ItemSettingsWidget(QWidget):
 
         self.label = QLabel(f"""Item: {self.info['item_name']}<br>Item Id: {self.info['item_id']}<br>Item Weight: {self.info['item_weight']} g<br>Stock Level: <span style='color: {stock_color};'>{stock_level}</span>""")
         self.label.setWordWrap(True)
-        self.label.setStyleSheet("padding: 4px; margin: 0px; background-color: transparent;")
+        self.label.setStyleSheet("padding: 4px; margin: 0px; background-color: transparent; font-size: 14px;")
         self.label.setTextFormat(Qt.TextFormat.RichText)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label)
 
         changeStockLayout = QHBoxLayout()
-        changeStockLayout.setContentsMargins(0, 0, 0, 0)
+        changeStockLayout.setContentsMargins(0,0,0,0)
         changeStockLayout.setSpacing(0)
-        changeStockLayout.addWidget(QLabel(f"Manual Stock Adjust: "))
+        stockLabel = QLabel(f"Manual Stock Adjust: ")
+        stockLabel.setStyleSheet("font-size: 14px")
+        changeStockLayout.addWidget(stockLabel)
 
         self.incrementer = QSpinBox()
         self.incrementer.setRange(0, 20)
