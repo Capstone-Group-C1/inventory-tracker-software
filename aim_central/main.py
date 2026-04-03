@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import QApplication, QWidget
-from view.HomeScreen import MainWindow
-from controller.Inventory import Controller
-from logic.CentralSystem import CentralSystem
-from logic.CanDatabaseBridge import CanDatabaseBridge
-from utils.logger import init_logging
+from aim_central.view.HomeScreen import MainWindow
+from aim_central.controller.Inventory import Controller
+from aim_central.logic.CentralSystem import CentralSystem
+from aim_central.logic.CanDatabaseBridge import CanDatabaseBridge
+from aim_central.utils.logger import init_logging
 import sys
 
 # Initialize logging
