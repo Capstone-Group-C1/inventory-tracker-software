@@ -143,6 +143,7 @@ def get_container_weight(container_id):
             )
             row = cur.fetchone()
             if row:
+                print(f"Current container weight: {float(row[0])}")
                 return float(row[0])
             return None
     except sqlite3.OperationalError as e:
@@ -300,6 +301,7 @@ def set_stock(item_id, new_stock):
     """
     Sets the current_stock of an item to an absolute value.
     """
+    printf("Setting stock to new values: {new_stock}")
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
         return False
