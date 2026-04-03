@@ -15,7 +15,7 @@ class TopBarLayout(QHBoxLayout):
         self.page = page
 
         logo = QSvgWidget("aim_central/AIMlogo.svg")
-        logo.setFixedSize(500, 100)
+        logo.setFixedSize(750, 150)
         self.addWidget(logo, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.addStretch()
@@ -34,7 +34,7 @@ class TopBarLayout(QHBoxLayout):
                 color: #f3f3f3;
                 padding: 10px 20px;
                 text-align: center;
-                font-size: 16px;
+                font-size: 24px;
                 font-weight: bold;
                 margin: 4px 2px;
                 border-radius: 12px;

@@ -12,7 +12,7 @@ from aim_central.view.ItemSettingsWidget import ItemSettingsWidget
 class ContainerSettingsWidget(QGroupBox):
     def __init__(self, model, container_id, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(160)  # Fixed width to prevent horizontal scrolling
+        self.setFixedWidth(260)  # Fixed width to prevent horizontal scrolling
         self.model = model
         self.item_widgets_list = []
 
@@ -40,11 +40,13 @@ class ContainerSettingsWidget(QGroupBox):
                 subcontrol-position: top center;
                 padding: 10px 0px 0px 0px;
                 background-color: transparent;
+                font-size: 20px;
             }
             QLabel {
                 background-color: transparent;
                 padding: 0px;
                 margin: 0px;
+                font-size: 14px;
             }
         """)
 
@@ -62,6 +64,7 @@ class ContainerSettingsWidget(QGroupBox):
         self.widgetLayout.addSpacing(5) # space between last item and weight/tare button
         self.widgetLayout.addStretch() # push weight label and tare button to the bottom
         
+
         self.container_weight_label = QLabel(f"Container Weight: {self.container_total_weight} g", self)
         self.widgetLayout.addWidget(self.container_weight_label)
         self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
@@ -74,7 +77,7 @@ class ContainerSettingsWidget(QGroupBox):
                 color: #f3f3f3;
                 padding: 5px 10px;
                 text-align: center;
-                font-size: 14px;
+                font-size: 18px;
                 font-weight: bold;
                 margin: 4px 2px;
                 border-radius: 12px;

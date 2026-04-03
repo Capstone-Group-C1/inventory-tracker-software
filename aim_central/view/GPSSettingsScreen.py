@@ -30,6 +30,22 @@ class GPSSettingsWindow(QMainWindow):
 
         menu = self.menuBar()
 
+        menu.setStyleSheet("""
+            QMenuBar {
+                font-size: 24px;
+                background-color: #f0f0f0;
+            }
+            QMenuBar::item {
+                spacing: 10px;
+                padding: 5px 10px;
+                background: transparent;
+            }
+            QMenu {
+                font-size: 22px;
+            }
+        """)
+
+
         file_menu = menu.addMenu("&Menu")
         file_menu.addAction(self.button_action)
         file_menu.addSeparator()
