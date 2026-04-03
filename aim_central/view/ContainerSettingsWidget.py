@@ -12,7 +12,7 @@ from aim_central.view.ItemSettingsWidget import ItemSettingsWidget
 class ContainerSettingsWidget(QGroupBox):
     def __init__(self, model, container_id, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(260)  # Fixed width to prevent horizontal scrolling
+        self.setFixedWidth(300)  # Fixed width to prevent horizontal scrolling
         self.model = model
         self.item_widgets_list = []
 
@@ -32,15 +32,18 @@ class ContainerSettingsWidget(QGroupBox):
                 background-color: #dddddd;
                 border-radius: 8px;
                 font-weight: bold;
+                font-size: 24px;
                 padding-top: 16px;
                 margin-top: 8px;
+                padding-bottom: 16px;
+                margin-bottom: 8px;
             }
             QGroupBox::title {
                 subcontrol-origin: padding;
                 subcontrol-position: top center;
-                padding: 10px 0px 0px 0px;
+                padding: 10px 10px 10px 10px;
                 background-color: transparent;
-                font-size: 20px;
+                font-size: 24px;
             }
             QLabel {
                 background-color: transparent;
@@ -54,6 +57,8 @@ class ContainerSettingsWidget(QGroupBox):
         # self.widgetLayout.addWidget(self.container_label)
         # self.container_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
 
+        self.widgetLayout.addSpacing(15) # space between title and first item
+
         if container_id != 0: # index 0 is not used, just a placeholder for ease of use with container ids
             for item in model.findContainer(container_id)["items"]:
                 item_widget = ItemSettingsWidget(model, item["item_id"])
@@ -61,13 +66,13 @@ class ContainerSettingsWidget(QGroupBox):
                 item_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
                 self.widgetLayout.addWidget(item_widget)
         
-        self.widgetLayout.addSpacing(5) # space between last item and weight/tare button
-        self.widgetLayout.addStretch() # push weight label and tare button to the bottom
-        
+            self.widgetLayout.addSpacing(5) # space between last item and weight/tare button
+            self.widgetLayout.addStretch() # push weight label and tare button to the bottom
 
-        self.container_weight_label = QLabel(f"Container Weight: {self.container_total_weight} g", self)
-        self.widgetLayout.addWidget(self.container_weight_label)
-        self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
+            self.container_weight_label = QLabel(f"Container Weight: {self.container_total_weight:.2f} g", self)
+            self.container_weight_label.setStyleSheet("font-size: 20px;")
+            self.widgetLayout.addWidget(self.container_weight_label)
+            self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
 
         self.tare_button = QPushButton("Tare Container")
         self.tare_button.setStyleSheet("""
@@ -77,7 +82,7 @@ class ContainerSettingsWidget(QGroupBox):
                 color: #f3f3f3;
                 padding: 5px 10px;
                 text-align: center;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: bold;
                 margin: 4px 2px;
                 border-radius: 12px;
