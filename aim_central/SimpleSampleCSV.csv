@@ -1,4 +1,4 @@
 item_id,container_id,item_name,item_weight,needed_stock,current_stock
-1,1,triangular bandage,24,4,4
-2,2,epipen (adult),63.2,2,2
-3,3,petroleum dressing,10.2,5,0
+1,1,quarters in bin 1,5.6,3,3
+2,2,quarters in bin 2,5.6,3,1
+3,3,quarters in bin 3,5.6,3,1

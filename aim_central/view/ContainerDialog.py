@@ -14,7 +14,7 @@ class ContainerDialog(QDialog):
                 border-radius: 10px;
             }
             QLabel {
-                font-size: 14px;
+                font-size: 20px;
                 margin: 5px;    
             }
         """)
@@ -28,7 +28,7 @@ class ContainerDialog(QDialog):
         layout = QVBoxLayout()
 
         title = QLabel(f"Container {self.id} Details")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 15px;")
+        title.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 15px;")
         layout.addWidget(title)
 
         for item in self.contents:
