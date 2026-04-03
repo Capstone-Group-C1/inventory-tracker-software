@@ -255,8 +255,13 @@ class CanDatabaseBridge:
         for container_id in container_ids:
             try:
                 self.driver.tare_bin(bin_id=container_id)
-            except Exception:
-                pass
+            except Exception as exc:
+                # Hardware tare may fail if the CAN bus is not connected; software tare still proceeds.
+                self.logger.warning(
+                    "Failed to send CAN tare command for bin %s: %s. Proceeding with software tare.",
+                    container_id,
+                    exc,
+                )
             self._weight_windows[container_id].clear()
             self._last_stable_weight.pop(container_id, None)
             self._pending_tare.add(container_id)
