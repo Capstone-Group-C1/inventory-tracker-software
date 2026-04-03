@@ -97,13 +97,6 @@ class MainWindow(QMainWindow):
 
         mainLayout.addLayout(row1Containers)
 
-        shelf1 = QFrame()
-        #shelf1.setLineWidth(5)
-        #shelf1.setMidLineWidth(4)
-        shelf1.setFrameShape(QFrame.Shape.HLine)
-        shelf1.setStyleSheet("border: 5px solid gray;")
-        #shelf1.setFrameShadow(QFrame.Shadow.Sunken)
-        mainLayout.addWidget(shelf1)
 
         if num_containers/containers_per_row >= 1:
             mainLayout.addSpacing(20)
@@ -119,14 +112,6 @@ class MainWindow(QMainWindow):
                 row2Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row2Containers)
-            shelf2 = QFrame()
-            #shelf2.setLineWidth(5)
-            #shelf2.setMidLineWidth(4)
-            shelf2.setFrameShape(QFrame.Shape.HLine)
-            shelf2.setStyleSheet("border: 5px solid gray;")
-            #shelf2.setFrameShadow(QFrame.Shadow.Sunken)
-            mainLayout.addWidget(shelf2)
-
             mainLayout.addSpacing(20)
 
         # up to 3 rows, 15 container max support
@@ -144,14 +129,6 @@ class MainWindow(QMainWindow):
                 row3Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row3Containers)
-            shelf3 = QFrame()
-            #shelf3.setLineWidth(5)
-            #shelf3.setMidLineWidth(4)
-            shelf3.setFrameShape(QFrame.Shape.HLine)
-            shelf3.setStyleSheet("border: 5px solid gray;")
-            #shelf3.setFrameShadow(QFrame.Shadow.Sunken)
-            mainLayout.addWidget(shelf3)
-
             mainLayout.addSpacing(20)
 
         widget = QWidget()
