@@ -8,7 +8,7 @@ from aim_central.logic import DatabaseOperations
 
 # Fraction of item weight used as tolerance when matching a weight delta to an item.
 # e.g. 0.15 means a 100g item will match any delta between 85g and 115g.
-WEIGHT_MATCH_TOLERANCE = 0.15
+WEIGHT_MATCH_TOLERANCE = 0.30
 
 # Minimum weight delta (grams) to act on — ignores sub-gram sensor drift.
 MIN_DELTA_G = 1.0
@@ -40,6 +40,8 @@ class CanDatabaseBridge:
         self.stability_tolerance_g = float(stability_tolerance_g)
         self._weight_windows = defaultdict(lambda: deque(maxlen=self.stability_window))
         self._last_stable_weight = {}
+        self._tare_offsets = {}
+        self._pending_tare = set()
         self._stop_event = threading.Event()
         self._thread = None
         self.logger = logging.getLogger("CanDatabaseBridge")
@@ -140,8 +142,14 @@ class CanDatabaseBridge:
             )
             return True
 
-        # Persist the latest stable reading so the GUI can display it.
-        DatabaseOperations.set_container_weight(bin_id, stable_weight_g)
+        # If a software tare was requested, capture this reading as the offset.
+        if bin_id in self._pending_tare:
+            self._tare_offsets[bin_id] = stable_weight_g
+            self._pending_tare.discard(bin_id)
+
+        # Persist the tare-adjusted weight so the GUI shows 0 for an empty tared bin.
+        display_weight = stable_weight_g - self._tare_offsets.get(bin_id, 0.0)
+        DatabaseOperations.set_container_weight(bin_id, display_weight)
 
         # First stable reading for this bin — store as baseline, nothing to diff against yet.
         if bin_id not in self._last_stable_weight:
@@ -227,28 +235,37 @@ class CanDatabaseBridge:
 
     def tare_single_container(self, container_id):
         """
-        Sends a tare command to a single container and resets its software state.
-        Called by the UI when an EMT tares an individual bin.
+        Software-tares a single container: the next stable reading becomes the
+        new zero reference. Also attempts a CAN tare command to the STM32.
         """
         try:
             self.driver.tare_bin(bin_id=container_id)
         except Exception:
-            pass  # bridge may not be connected yet; still reset software state
+            pass  # bus may not be connected yet; software tare still proceeds
         self._weight_windows[container_id].clear()
         self._last_stable_weight.pop(container_id, None)
-        self.logger.info("Tare command sent to bin %s.", container_id)
+        self._pending_tare.add(container_id)
+        self.logger.info("Tare requested for bin %s.", container_id)
 
     def tare_all_containers(self):
         """
-        Sends a tare command to every container currently in the database.
-        Should be called after bins have been restocked.
+        Software-tares every container in the database.
         """
         container_ids = DatabaseOperations.get_all_container_ids()
         for container_id in container_ids:
-            self.driver.tare_bin(bin_id=container_id)
+            try:
+                self.driver.tare_bin(bin_id=container_id)
+            except Exception as exc:
+                # Hardware tare may fail if the CAN bus is not connected; software tare still proceeds.
+                self.logger.warning(
+                    "Failed to send CAN tare command for bin %s: %s. Proceeding with software tare.",
+                    container_id,
+                    exc,
+                )
             self._weight_windows[container_id].clear()
             self._last_stable_weight.pop(container_id, None)
-            self.logger.info("Tare command sent to bin %s.", container_id)
+            self._pending_tare.add(container_id)
+            self.logger.info("Tare requested for bin %s.", container_id)
 
     def start(self, timeout=1.0, idle_sleep_s=0.05):
         """
