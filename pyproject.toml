@@ -18,7 +18,7 @@ license = {text = "MIT"}
 distribution = false
 
 [tool.pdm.scripts]
-start = {cmd = ["python3","-m", "aim_central.main"]}
+start = {cmd = ["python3", "-m", "aim_central.main"]}
 
 [dependency-groups]
 dev = [
