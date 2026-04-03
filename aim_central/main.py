@@ -14,9 +14,10 @@ logger.info("Starting AIM Central System...")
 app = QApplication(sys.argv)
 
 model = CentralSystem()
+model.import_db("aim_central/SimpleSampleCSV.csv")
+
 view = MainWindow(model)
 controller = Controller(view)
-
 controller.launch(model)
 
 # Start the CAN bridge directly (geofence removed for demo).

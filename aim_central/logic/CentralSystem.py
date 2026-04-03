@@ -1,11 +1,5 @@
-import json
-import os
-
-from aim_central.logic import DatabaseOperations as db_ops
-
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(script_dir, "testInventory.json")
+from . import DatabaseOperations as db_ops
+from . import CanDatabaseBridge as bridge
 
 class CentralSystem():
     def __init__(self):
@@ -13,24 +7,36 @@ class CentralSystem():
 
     def findContainer(self, containerId):
         return db_ops.find_container(containerId)
+    
+    def findItem(self, itemId):
+        return db_ops.find_item(itemId)
+    
+    def getContainerWeight(self, containerId):
+        return db_ops.get_container_weight(containerId)
 
-    def getStockLevel(self, containerId):
-        return db_ops.get_stock_level(containerId)
+    def setContainerWeight(self, containerId, weight):
+        return db_ops.set_container_weight(containerId, weight)
+
+    def getStockLevel(self, item_id):
+        return db_ops.get_stock_level(item_id)
     
-    def getStock(self, containerId):
-        return db_ops.get_stock(containerId)
+    def getContainerStockLevel(self, containerId):
+        return db_ops.get_container_stock_level(containerId)
+
+    def setStock(self, item_id, new_stock):
+        return db_ops.set_stock(item_id, new_stock)
+
+    def getStock(self, item_id):
+        return db_ops.get_stock(item_id)
     
-    def changeStock(self, containerId, changeAmount):
-        return db_ops.change_stock(containerId, changeAmount)
-    
-    def getContainerDetails(self, containerId):
-        container = self.findContainer(containerId)
-        if container:
-            return {
-                "id": container["container_id"],
-                "contents": container["item_name"],
-                "neededStock": container["needed_stock"],
-                "currentStock": container["current_stock"],
-                "currentWeight": "N/A"
-            }
-        return None
+    def changeStock(self, item_id, change_amount):
+        return db_ops.change_stock(item_id, change_amount)
+
+    def tareAllContainers(self):
+        bridge.tare_all_containers()
+
+    def getNumContainers(self):
+        return db_ops.get_num_containers()
+
+    def import_db(self, file_path):
+        return db_ops.import_from_csv(file_path)

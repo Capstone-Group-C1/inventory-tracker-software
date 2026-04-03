@@ -1,0 +1,55 @@
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QPushButton,   
+    QHBoxLayout,
+)
+
+from PyQt6.QtSvgWidgets import QSvgWidget
+from aim_central.view.TimeWidget import TimeDisplay
+
+
+class TopBarLayout(QHBoxLayout):
+    def __init__(self, page):
+        super().__init__()
+        self.features = None
+        self.page = page
+
+        logo = QSvgWidget("aim_central/AIMlogo.svg")
+        logo.setFixedSize(750, 150)
+        self.addWidget(logo, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.addStretch()
+
+        # Add time display to the top bar
+        time_display = TimeDisplay()
+        self.addWidget(time_display, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.addSpacing(10)
+
+        self.refresh_button = QPushButton("Refresh")
+        self.refresh_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e03333;
+                border: none;
+                color: #f3f3f3;
+                padding: 10px 20px;
+                text-align: center;
+                font-size: 24px;
+                font-weight: bold;
+                margin: 4px 2px;
+                border-radius: 12px;
+            }
+        """)
+
+        self.addWidget(self.refresh_button, alignment=Qt.AlignmentFlag.AlignRight)
+    
+
+    
+    def addFeatures(self, features):
+        if self.page == "home":
+            self.refresh_button.clicked.connect(lambda: features.refreshContainerButtons())
+        elif self.page == "settings":
+            self.refresh_button.clicked.connect(lambda: features.refreshContainerSettings())
+        elif self.page == "gps":
+            self.refresh_button.clicked.connect(lambda: features.refreshGPSSettings())
+        

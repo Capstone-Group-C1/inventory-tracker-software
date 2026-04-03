@@ -1,6 +1,7 @@
 import logging
+import os
 import sys
-from utils.config import AIMConfig
+from aim_central.utils.config import AIMConfig
 from logging.handlers import RotatingFileHandler
 
 """Logging Module for AIM"""
@@ -31,6 +32,8 @@ def init_logging():
   console_handler.setLevel(AIMConfig.LOG_LEVEL)
   console_handler.setFormatter(formatter)
   logger.addHandler(console_handler)
+
+  os.makedirs(AIMConfig.LOG_DIR, exist_ok=True)
 
   rotating_handler = RotatingFileHandler(
     AIMConfig.LOG_DIR + '/' + AIMConfig.LOG_NAME + '.log',
