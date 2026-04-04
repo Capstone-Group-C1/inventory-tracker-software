@@ -77,19 +77,29 @@ class CanDatabaseBridge:
         """
         Find the item in a bin whose weight best matches abs(delta_g).
 
-        Returns item_id if a match is found within WEIGHT_MATCH_TOLERANCE, else None.
+        Checks integer multiples (1, 2, 3, …) so removing several items at once
+        is handled correctly.
+
+        Returns (item_id, count) if a match is found within WEIGHT_MATCH_TOLERANCE,
+        else (None, 0).
         """
         item_ids = DatabaseOperations.get_item_ids(bin_id)
         if not item_ids:
-            return None
+            return None, 0
 
         abs_delta = abs(delta_g)
         for item_id in item_ids:
             item_weight = DatabaseOperations.get_item_weight(item_id)
-            if item_weight and abs(abs_delta - item_weight) / item_weight <= WEIGHT_MATCH_TOLERANCE:
-                return item_id
+            if not item_weight:
+                continue
+            count = round(abs_delta / item_weight)
+            if count < 1:
+                continue
+            expected = count * item_weight
+            if abs(abs_delta - expected) / expected <= WEIGHT_MATCH_TOLERANCE:
+                return item_id, count
 
-        return None
+        return None, 0
 
     def process_one_message(self, timeout=1.0):
         """
@@ -182,7 +192,7 @@ class CanDatabaseBridge:
             )
             return True
 
-        matched_item_id = self._match_item_by_delta(bin_id, delta_g)
+        matched_item_id, match_count = self._match_item_by_delta(bin_id, delta_g)
 
         if matched_item_id is None:
             DatabaseOperations.record_sensor_event(
@@ -198,8 +208,8 @@ class CanDatabaseBridge:
             )
             return True
 
-        # delta_g > 0 means weight dropped (item removed), < 0 means item returned
-        change = -1 if delta_g > 0 else 1
+        # delta_g > 0 means weight dropped (items removed), < 0 means items returned
+        change = -match_count if delta_g > 0 else match_count
         updated = DatabaseOperations.change_stock(matched_item_id, change)
 
         if not updated:
@@ -222,11 +232,11 @@ class CanDatabaseBridge:
             computed_stock=DatabaseOperations.get_stock(matched_item_id),
             sensor_status=status,
             decision="accepted",
-            note=f"delta={delta_g:.2f}g matched item_id={matched_item_id} change={change:+d}",
+            note=f"delta={delta_g:.2f}g matched item_id={matched_item_id} x{match_count} change={change:+d}",
         )
         self.logger.info(
-            "Stock synced: bin=%s item_id=%s delta=%.2fg change=%+d",
-            bin_id, matched_item_id, delta_g, change,
+            "Stock synced: bin=%s item_id=%s x%d delta=%.2fg change=%+d",
+            bin_id, matched_item_id, match_count, delta_g, change,
         )
 
         if self.publish_led_feedback:
