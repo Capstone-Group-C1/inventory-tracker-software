@@ -17,6 +17,7 @@ class ContainerSettingsWidget(QGroupBox):
         self.item_widgets_list = []
 
         self.container_id = container_id
+        self.container_name = model.getContainerName(container_id)
         self.container_total_weight = model.getContainerWeight(container_id)
 
         self.widgetLayout = QVBoxLayout()
@@ -24,7 +25,7 @@ class ContainerSettingsWidget(QGroupBox):
         self.widgetLayout.setSpacing(0)
         self.setLayout(self.widgetLayout)
 
-        self.setTitle(f"Container {container_id}")
+        self.setTitle(self.container_name)
         print(f"Title: {self.title()}")
 
         self.setStyleSheet("""
@@ -68,14 +69,15 @@ class ContainerSettingsWidget(QGroupBox):
             self.widgetLayout.addStretch() # push weight label and tare button to the bottom
         
 
-            self.container_weight_label = QLabel(f"Container Weight: {round(self.container_total_weight, 1):2f} g", self)
+            self.container_weight_label = QLabel(f"Container Weight: {round(self.container_total_weight, 1):.2f} g", self)
+            self.container_weight_label.setStyleSheet("font-size: 20px")
             self.widgetLayout.addWidget(self.container_weight_label)
             self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
 
         self.tare_button = QPushButton("Tare Container")
         self.tare_button.setStyleSheet("""
             QPushButton {
-                background-color: #aaaaaa;
+                background-color: #4CAF50;
                 border: none;
                 color: #f3f3f3;
                 padding: 5px 10px;
@@ -84,6 +86,9 @@ class ContainerSettingsWidget(QGroupBox):
                 font-style: bold;
                 margin: 4px 2px;
                 border-radius: 12px;
+            }
+            QPushButton::pressed {
+                background-color: #3B9E40;
             }
         """)
         self.widgetLayout.addWidget(self.tare_button)

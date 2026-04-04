@@ -301,7 +301,7 @@ def set_stock(item_id, new_stock):
     """
     Sets the current_stock of an item to an absolute value.
     """
-    printf("Setting stock to new values: {new_stock}")
+    print("Setting stock to new values: {new_stock}")
     if new_stock < 0:
         print("Error: Attempting to set stock below zero.")
         return False

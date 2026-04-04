@@ -1,10 +1,12 @@
-from PyQt6.QtCore import Qt, QTimer, QTime
-from PyQt6.QtGui import QAction
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
+    QToolBar,
+    QLabel,
     )
 
 from PyQt6.QtGui import QColor, QPalette
@@ -29,46 +31,30 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Ambulance Inventory Tracker")
         self.resize(800, 600)
-        self.container_buttons_list = [ContainerButton(0, 2)] # 1 indexed for ease of use with container ids, index 0 is not used
+        self.container_buttons_list = [0] # 1 indexed for ease of use with container ids, index 0 is not used
         self.model = model # read only
         self.features = None
 
         self.calibrateWindow = CalibrateWindow(model)
         self.GPSSettingsWindow = GPSSettingsWindow(model)
 
-        button_action = QAction("GPS Settings", self)
+        button_action = QAction(QIcon("aim_central/view/settings_black.png"), "settings", self)
         button_action.triggered.connect(
-            lambda: self.toggleGPSWindow(self)
-        )
-
-
-        button_action2 = QAction("Weight Calibration Settings", self)
-        button_action2.triggered.connect(
             lambda: self.toggleCalibrateWindow(self)
         )
 
 
-        menu = self.menuBar()
+        button_action2 = QAction(QIcon("aim_central/view/gps_black.png"),"gps", self)
+        button_action2.triggered.connect(
+            lambda: self.toggleGPSWindow(self)
+        )
 
-        menu.setStyleSheet("""
-            QMenuBar {
-                font-size: 24px;
-                background-color: #f0f0f0;
-            }
-            QMenuBar::item {
-                spacing: 10px;
-                padding: 5px 10px;
-                background: transparent;
-	    }
-            QMenu {
-                font-size: 22px;
-            }
-        """)
-
-        file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(button_action2)
-        file_menu.addSeparator()
-        file_menu.addAction(button_action)
+        toolbar = QToolBar()
+        toolbar.setIconSize(QSize(50,50))
+        self.addToolBar(toolbar)
+        toolbar.addAction(button_action)
+        toolbar.addWidget(QLabel("    "))
+        toolbar.addAction(button_action2)
         
         widget = QWidget()
         widget.setLayout(self.createLayout())
@@ -89,12 +75,12 @@ class MainWindow(QMainWindow):
     
     def createLayout(self):
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout("home")
+        self.topBarLayout = TopBarLayout()
         row1Containers = QHBoxLayout()
 
         
         mainLayout.addLayout(self.topBarLayout)
-        mainLayout.addSpacing(20)
+        mainLayout.addSpacing(10)
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = self.model.getNumContainers()
@@ -109,7 +95,8 @@ class MainWindow(QMainWindow):
 
         for i in range(1, containers_per_row + 1):
             stock_level = self.model.getContainerStockLevel(i)
-            self.container_buttons_list.append(ContainerButton(i, stock_level))
+            container_text = self.createContainerText(i)
+            self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
             row1Containers.addWidget(self.container_buttons_list[i])
 
         mainLayout.addLayout(row1Containers)
@@ -125,7 +112,8 @@ class MainWindow(QMainWindow):
 
             for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, stock_level))
+                container_text = self.createContainerText(i)
+                self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
                 row2Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row2Containers)
@@ -142,7 +130,8 @@ class MainWindow(QMainWindow):
 
             for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, stock_level))
+                container_text = self.createContainerText(i)
+                self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
                 row3Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row3Containers)
@@ -150,43 +139,27 @@ class MainWindow(QMainWindow):
         
         return mainLayout
 
+    def createContainerText(self, containerId):
+        containerName = self.model.getContainerName(containerId)
+        items = self.model.findContainer(containerId)["items"]
+
+        containerText = ""
+
+        if len(items) == 1:
+            containerText = f"{containerName} ({items[0]['current_stock']}/{items[0]['needed_stock']})"
+
+        elif len(items) > 1:
+            containerText = f"{containerName}\n"
+            for item in items:
+                containerText += f"{item['item_name']}: {item['current_stock']}/{item['needed_stock']} \n"
+
+        return containerText
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.showNormal()
     
-    def updateContainerDisplay(self, containerId, stockLevel):
-        color_map = {
-            "Green": "#4CAF50",
-            "Yellow": "#EAC225",
-            "Red": "#e03333"
-        }
-
-        stock_color = "Green"
-        if stockLevel < 2:
-            if stockLevel == 0:
-                stock_color = "Red"
-            else:                
-                stock_color = "Yellow"
-    
-        button = self.container_buttons_list[containerId]
-        button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {color_map.get(stock_color, "#4CAF50")};
-                border: none;
-                color: white;
-                padding: 50px 50px;
-                text-align: center;
-                font-size: 16px;
-                margin: 4px 2px;
-                border-radius: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {color_map.get(stock_color, "#45a049")};
-            }}
-        """)
-
-
     def openContainerDetails(self, container_details):
         dialog = ContainerDialog(container_details, self)
         dialog.exec()
@@ -206,21 +179,21 @@ class MainWindow(QMainWindow):
     
     def refreshContainerButtons(self):
         for button in self.container_buttons_list:
-            containerId = button.containerId
-            stockLevel = self.model.getContainerStockLevel(containerId)
-            button.stockLevel = stockLevel
-            self.updateContainerDisplay(containerId, stockLevel)
+            if button != 0 and button != None: # index 0 is not used, just a placeholder for ease of use with container ids
+                containerId = button.containerId
+                stockLevel = self.model.getContainerStockLevel(containerId)
+                containerText = self.createContainerText(containerId)
+
+                print(f"setting stock level, current stock level is: {stockLevel}")
+                button.setStockLevel(stockLevel)
+                button.setContainerText(containerText)
     
     def refreshContainerSettings(self):
         self.calibrateWindow.refreshContainerSettings()
 
     def addFeatures(self, features):
         self.features = features
-
-        for button in self.container_buttons_list:
-            button.addFeatures(features)
         
-        self.topBarLayout.addFeatures(features)
         self.calibrateWindow.addFeatures(features)
         self.GPSSettingsWindow.addFeatures(features)
         

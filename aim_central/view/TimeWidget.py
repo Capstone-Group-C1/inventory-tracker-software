@@ -9,7 +9,7 @@ class TimeDisplay(QLabel):
         super().__init__()
  
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setStyleSheet("font-size: 24px; font-weight: bold;")
+        self.setStyleSheet("font-size: 30px; font-weight: bold;")
 
         # Setup timer
         self.timer = QTimer(self)
