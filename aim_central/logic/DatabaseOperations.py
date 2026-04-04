@@ -58,6 +58,10 @@ def database_init():
             # create a cursor
             cursor = conn.cursor()
 
+            # WAL mode allows concurrent reads from the UI thread while the CAN
+            # bridge thread is writing, preventing "database is locked" errors.
+            cursor.execute("PRAGMA journal_mode=WAL")
+
             # execute statements
             for statement in sql_statements:
                 cursor.execute(statement)

@@ -57,8 +57,9 @@ class ContainerSettingsWidget(QGroupBox):
 
         self.widgetLayout.addSpacing(15) # space between title and first item
 
-        if container_id != 0: # index 0 is not used, just a placeholder for ease of use with container ids
-            for item in model.findContainer(container_id)["items"]:
+        container_data = model.findContainer(container_id) if container_id != 0 else None
+        if container_data is not None:
+            for item in container_data["items"]:
                 item_widget = ItemSettingsWidget(model, item["item_id"])
                 self.item_widgets_list.append(item_widget)
                 item_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
