@@ -33,11 +33,13 @@ class CanDatabaseBridge:
         publish_led_feedback=True,
         stability_window=3,
         stability_tolerance_g=2.0,
+        adc_offsets=None,
     ):
         self.driver = CANDriver(channel=can_channel, bitrate=bitrate)
         self.publish_led_feedback = publish_led_feedback
         self.stability_window = max(1, int(stability_window))
         self.stability_tolerance_g = float(stability_tolerance_g)
+        self._adc_offsets = dict(adc_offsets) if adc_offsets else {}
         self._weight_windows = defaultdict(lambda: deque(maxlen=self.stability_window))
         self._last_stable_weight = {}
         self._tare_offsets = {}
@@ -101,7 +103,7 @@ class CanDatabaseBridge:
             return False
 
         bin_id = msg["bin_id"]
-        weight_g = msg["weight_g"]
+        weight_g = msg["weight_g"] - self._adc_offsets.get(bin_id, 0.0)
         status = msg["status"]
         tare_flag = msg["tare_flag"]
 
@@ -148,7 +150,8 @@ class CanDatabaseBridge:
             self._pending_tare.discard(bin_id)
 
         # Persist the tare-adjusted weight so the GUI shows 0 for an empty tared bin.
-        display_weight = stable_weight_g - self._tare_offsets.get(bin_id, 0.0)
+        # Clamp to 0 — sensor drift can push readings slightly negative after a tare.
+        display_weight = max(0.0, stable_weight_g - self._tare_offsets.get(bin_id, 0.0))
         DatabaseOperations.set_container_weight(bin_id, display_weight)
 
         # First stable reading for this bin — store as baseline, nothing to diff against yet.
