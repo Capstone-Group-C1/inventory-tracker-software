@@ -1,5 +1,5 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
@@ -7,7 +7,10 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QScrollArea,
     QPushButton,
+    QToolBar,
+    QLabel,
 )
+
 
 from aim_central.view.ContainerSettingsWidget import ContainerSettingsWidget
 from aim_central.view.TopBarLayout import TopBarLayout
@@ -38,32 +41,16 @@ class CalibrateWindow(QMainWindow):
             }
         """)
 
-        self.button_action = QAction("Home", self)
-        self.button_action2 = QAction("GPS Settings", self)
-
-        menu = self.menuBar()
-
-        menu.setStyleSheet("""
-            QMenuBar {
-                font-size: 24px;
-                background-color: #f0f0f0;
-            }
-            QMenuBar::item {
-                spacing: 10px;
-                padding: 5px 10px;
-                background: transparent;
-            }
-            QMenu {
-                font-size: 22px;
-            }
-        """)
+        self.button_action = QAction(QIcon("aim_central/view/home_black.png"), "home", self)
+        self.button_action2 = QAction(QIcon("aim_central/view/gps_black.png"),"gps", self)
 
 
-
-        file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(self.button_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.button_action2)
+        toolbar = QToolBar()
+        toolbar.setIconSize(QSize(50,50))
+        self.addToolBar(toolbar)
+        toolbar.addAction(self.button_action)
+        toolbar.addWidget(QLabel("    "))
+        toolbar.addAction(self.button_action2)
 
         scroll = QScrollArea()
         container = QWidget()

@@ -1,10 +1,12 @@
-from PyQt6.QtCore import Qt, QTimer, QTime
-from PyQt6.QtGui import QAction
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
+    QToolBar,
+    QLabel,
     )
 
 from PyQt6.QtGui import QColor, QPalette
@@ -36,39 +38,23 @@ class MainWindow(QMainWindow):
         self.calibrateWindow = CalibrateWindow(model)
         self.GPSSettingsWindow = GPSSettingsWindow(model)
 
-        button_action = QAction("GPS Settings", self)
+        button_action = QAction(QIcon("aim_central/view/settings_black.png"), "settings", self)
         button_action.triggered.connect(
-            lambda: self.toggleGPSWindow(self)
-        )
-
-
-        button_action2 = QAction("Weight Calibration Settings", self)
-        button_action2.triggered.connect(
             lambda: self.toggleCalibrateWindow(self)
         )
 
 
-        menu = self.menuBar()
+        button_action2 = QAction(QIcon("aim_central/view/gps_black.png"),"gps", self)
+        button_action2.triggered.connect(
+            lambda: self.toggleGPSWindow(self)
+        )
 
-        menu.setStyleSheet("""
-            QMenuBar {
-                font-size: 24px;
-                background-color: #f0f0f0;
-            }
-            QMenuBar::item {
-                spacing: 10px;
-                padding: 5px 10px;
-                background: transparent;
-	    }
-            QMenu {
-                font-size: 22px;
-            }
-        """)
-
-        file_menu = menu.addMenu("&Menu")
-        file_menu.addAction(button_action2)
-        file_menu.addSeparator()
-        file_menu.addAction(button_action)
+        toolbar = QToolBar()
+        toolbar.setIconSize(QSize(50,50))
+        self.addToolBar(toolbar)
+        toolbar.addAction(button_action)
+        toolbar.addWidget(QLabel("    "))
+        toolbar.addAction(button_action2)
         
         widget = QWidget()
         widget.setLayout(self.createLayout())
