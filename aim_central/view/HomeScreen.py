@@ -5,7 +5,8 @@ from PyQt6.QtWidgets import (
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
-    QFrame
+    QTimer,
+    QTime,
 )
 
 from PyQt6.QtGui import QColor, QPalette
@@ -70,7 +71,25 @@ class MainWindow(QMainWindow):
         file_menu.addAction(button_action2)
         file_menu.addSeparator()
         file_menu.addAction(button_action)
+        
+        widget = QWidget()
+        widget.setLayout(self.createLayout())
+        self.setCentralWidget(widget)
+        self.showFullScreen()
 
+        # Setup timer for auto update every second
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_all)
+        self.timer.start(1000)  # Update every 1000ms (1 second)
+
+        self.update_all()  # Initial call
+
+    def update_all(self):
+        self.refreshContainerButtons()
+        self.refreshContainerSettings()
+
+    
+    def createLayout(self):
         mainLayout = QVBoxLayout()
         self.topBarLayout = TopBarLayout("home")
         row1Containers = QHBoxLayout()
@@ -80,7 +99,7 @@ class MainWindow(QMainWindow):
         mainLayout.addSpacing(20)
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        num_containers = model.getNumContainers()
+        num_containers = self.model.getNumContainers()
         containers_per_row = 5
 
         if num_containers < 4:
@@ -91,7 +110,7 @@ class MainWindow(QMainWindow):
             containers_per_row = 4
 
         for i in range(1, containers_per_row + 1):
-            stock_level = model.getContainerStockLevel(i)
+            stock_level = self.model.getContainerStockLevel(i)
             self.container_buttons_list.append(ContainerButton(i, stock_level))
             row1Containers.addWidget(self.container_buttons_list[i])
 
@@ -107,7 +126,7 @@ class MainWindow(QMainWindow):
                 second_row_containers = num_containers - containers_per_row
 
             for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
-                stock_level = model.getContainerStockLevel(i)
+                stock_level = self.model.getContainerStockLevel(i)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
                 row2Containers.addWidget(self.container_buttons_list[i])
 
@@ -124,19 +143,16 @@ class MainWindow(QMainWindow):
                 third_row_containers = num_containers - 2*containers_per_row
 
             for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
-                stock_level = model.getContainerStockLevel(i)
+                stock_level = self.model.getContainerStockLevel(i)
                 self.container_buttons_list.append(ContainerButton(i, stock_level))
                 row3Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row3Containers)
             mainLayout.addSpacing(20)
+        
+        return mainLayout
 
-        widget = QWidget()
-        widget.setLayout(mainLayout)
-        self.setCentralWidget(widget)
 
-        self.showFullScreen()
-    
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.showNormal()
@@ -171,6 +187,7 @@ class MainWindow(QMainWindow):
                 background-color: {color_map.get(stock_color, "#45a049")};
             }}
         """)
+
 
     def openContainerDetails(self, container_details):
         dialog = ContainerDialog(container_details, self)
