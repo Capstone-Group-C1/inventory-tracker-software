@@ -8,14 +8,6 @@ class Controller():
     def set_bridge(self, bridge):
         self.bridge = bridge
 
-    def ContainerButtonClick(self, containerId):
-        print("container " + str(containerId) + " button clicked")
-        if self.model:
-            stockLevel = self.model.getContainerStockLevel(containerId)
-            self.view.updateContainerDisplay(containerId, stockLevel)
-
-            containerDetails = self.model.findContainer(containerId)
-            self.view.openContainerDetails(containerDetails)
     
     def manualStockChange(self, itemId, newAmt):
         print(f"Manual stock change for item {itemId} to new amount: {newAmt}")
@@ -46,20 +38,6 @@ class Controller():
     
     def toggleHomeWindow(self, curWindow):
         self.view.toggleHomeWindow(curWindow)
-    
-    def refreshContainerButtons(self):
-        for button in self.view.container_buttons_list:
-            containerId = button.containerId
-            stockLevel = self.model.getContainerStockLevel(containerId)
-            button.stockLevel = stockLevel
-            self.view.updateContainerDisplay(containerId, stockLevel)
-    
-    def refreshContainerSettings(self):
-        print("Refreshing container settings...")
-        self.view.refreshContainerSettings()
-
-    def refreshGPSSettings(self):
-        pass
 
     def launch(self, model):
         print("Controller launched with model:", model)

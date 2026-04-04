@@ -16,7 +16,7 @@ class ItemSettingsWidget(QWidget):
         self.stock_level = model.getStockLevel(item_id)
         self.info = model.findItem(item_id)
 
-        stock_color = "green" if self.stock_level > 1 else "#D4B100" if self.stock_level == 1 else "#e03333"
+        stock_color = "green" if self.stock_level > 1 else "#D8B010" if self.stock_level == 1 else "#e03333"
         stock_level = "Normal" if self.stock_level > 1 else "Low" if self.stock_level == 1 else "Empty"
 
         # Create layout for the widget

@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Ambulance Inventory Tracker")
         self.resize(800, 600)
-        self.container_buttons_list = [ContainerButton(0, 2)] # 1 indexed for ease of use with container ids, index 0 is not used
+        self.container_buttons_list = [0] # 1 indexed for ease of use with container ids, index 0 is not used
         self.model = model # read only
         self.features = None
 
@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
 
         for i in range(1, containers_per_row + 1):
             stock_level = self.model.getContainerStockLevel(i)
-            self.container_buttons_list.append(ContainerButton(i, stock_level))
+            self.container_buttons_list.append(ContainerButton(i, self.model))
             row1Containers.addWidget(self.container_buttons_list[i])
 
         mainLayout.addLayout(row1Containers)
@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
 
             for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, stock_level))
+                self.container_buttons_list.append(ContainerButton(i, self.model))
                 row2Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row2Containers)
@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
 
             for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, stock_level))
+                self.container_buttons_list.append(ContainerButton(i, self.model))
                 row3Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row3Containers)
@@ -155,37 +155,9 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key.Key_Escape:
             self.showNormal()
     
-    def updateContainerDisplay(self, containerId, stockLevel):
-        color_map = {
-            "Green": "#4CAF50",
-            "Yellow": "#EAC225",
-            "Red": "#e03333"
-        }
-
-        stock_color = "Green"
-        if stockLevel < 2:
-            if stockLevel == 0:
-                stock_color = "Red"
-            else:                
-                stock_color = "Yellow"
-    
+    def updateContainerDisplay(self, containerId):
         button = self.container_buttons_list[containerId]
-        button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {color_map.get(stock_color, "#4CAF50")};
-                border: none;
-                color: white;
-                padding: 50px 50px;
-                text-align: center;
-                font-size: 16px;
-                margin: 4px 2px;
-                border-radius: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {color_map.get(stock_color, "#45a049")};
-            }}
-        """)
-
+        button = ContainerButton(containerId, self.model)
 
     def openContainerDetails(self, container_details):
         dialog = ContainerDialog(container_details, self)
@@ -206,19 +178,15 @@ class MainWindow(QMainWindow):
     
     def refreshContainerButtons(self):
         for button in self.container_buttons_list:
-            containerId = button.containerId
-            stockLevel = self.model.getContainerStockLevel(containerId)
-            button.stockLevel = stockLevel
-            self.updateContainerDisplay(containerId, stockLevel)
+            if button != 0: # index 0 is not used, just a placeholder for ease of use with container ids
+                containerId = button.containerId
+                self.updateContainerDisplay(containerId)
     
     def refreshContainerSettings(self):
         self.calibrateWindow.refreshContainerSettings()
 
     def addFeatures(self, features):
         self.features = features
-
-        for button in self.container_buttons_list:
-            button.addFeatures(features)
         
         self.calibrateWindow.addFeatures(features)
         self.GPSSettingsWindow.addFeatures(features)
