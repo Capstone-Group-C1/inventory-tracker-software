@@ -21,7 +21,11 @@ controller = Controller(view)
 controller.launch(model)
 
 # Start the CAN bridge directly (geofence removed for demo).
-bridge = CanDatabaseBridge(can_channel='can0', bitrate=500000)
+bridge = CanDatabaseBridge(
+    can_channel='can0',
+    bitrate=500000,
+    adc_offsets={1: -33.91, 2: 0.25, 3: 16.72},
+)
 bridge.start()
 controller.set_bridge(bridge)
 
