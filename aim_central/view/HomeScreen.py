@@ -1,13 +1,11 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer, QTime
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,    
     QHBoxLayout,
     QVBoxLayout,
-    QTimer,
-    QTime,
-)
+    )
 
 from PyQt6.QtGui import QColor, QPalette
 from aim_central.view.ContainerButton import ContainerButton

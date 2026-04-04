@@ -68,9 +68,9 @@ class ContainerSettingsWidget(QGroupBox):
             self.widgetLayout.addStretch() # push weight label and tare button to the bottom
         
 
-        self.container_weight_label = QLabel(f"Container Weight: {round(self.container_total_weight, 1):2f} g", self)
-        self.widgetLayout.addWidget(self.container_weight_label)
-        self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
+            self.container_weight_label = QLabel(f"Container Weight: {round(self.container_total_weight, 1):2f} g", self)
+            self.widgetLayout.addWidget(self.container_weight_label)
+            self.container_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignBottom)
 
         self.tare_button = QPushButton("Tare Container")
         self.tare_button.setStyleSheet("""
