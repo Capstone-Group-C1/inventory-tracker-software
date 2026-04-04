@@ -8,11 +8,13 @@ from PyQt6.QtWidgets import (
 )
 
 from PyQt6.QtWidgets import QWidget, QSizePolicy
+from aim_central.view.TriangleButton import TriangleButton
 
 class ItemSettingsWidget(QWidget):
     def __init__(self, model, item_id, parent=None):
         super().__init__(parent)
         self.model = model
+        self.item_id = item_id
         self.stock_level = model.getStockLevel(item_id)
         self.info = model.findItem(item_id)
 
@@ -27,7 +29,7 @@ class ItemSettingsWidget(QWidget):
         self.setLayout(layout)
         
 
-        self.label = QLabel(f"""Item: {self.info['item_name']}<br>Item Weight: {self.info['item_weight']} g<br>Stock Level: <span style='color: {stock_color};'>{stock_level}</span>""")
+        self.label = QLabel(f"""Item: {self.info['item_name']}<br>Item Weight: {self.info['item_weight']} g<br>Stock Level: <span style='color: {stock_color};'>{stock_level}</span><br>Manual Stock Adjust:""")
         self.label.setWordWrap(True)
         self.label.setStyleSheet("padding: 4px; margin: 0px; background-color: transparent; font-size: 20px;")
         self.label.setTextFormat(Qt.TextFormat.RichText)
@@ -35,17 +37,24 @@ class ItemSettingsWidget(QWidget):
         layout.addWidget(self.label)
 
         changeStockLayout = QHBoxLayout()
-        changeStockLayout.setContentsMargins(0,0,0,0)
-        changeStockLayout.setSpacing(0)
-        stockLabel = QLabel(f"Manual Stock Adjust: ")
-        stockLabel.setStyleSheet("font-size: 20px")
+        changeStockLayout.setContentsMargins(0, 0, 0, 0)
+        changeStockLayout.setSpacing(4)
+        changeStockLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.decreaseStockButton = TriangleButton("down")
+        changeStockLayout.addStretch(1)
+        changeStockLayout.addWidget(self.decreaseStockButton, alignment=Qt.AlignmentFlag.AlignVCenter)
+
+        stockLabel = QLabel(f"{self.info['current_stock']} / {self.info['needed_stock']}")
+        stockLabel.setStyleSheet("font-size: 20px; margin: 0px; padding: 0px;")
+        stockLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        stockLabel.setContentsMargins(10, 10, 10, 10)
         changeStockLayout.addWidget(stockLabel)
 
-        self.incrementer = QSpinBox()
-        self.incrementer.setRange(0, 20)
-        self.incrementer.setStyleSheet("font-size: 20px")
-        self.incrementer.setValue(self.info['current_stock'])
-        changeStockLayout.addWidget(self.incrementer)
+        self.increaseStockButton = TriangleButton("up")
+        changeStockLayout.addWidget(self.increaseStockButton, alignment=Qt.AlignmentFlag.AlignVCenter)
+        changeStockLayout.addStretch(1)
+
         layout.addLayout(changeStockLayout)
 
 
@@ -54,4 +63,6 @@ class ItemSettingsWidget(QWidget):
 
 
     def addFeatures(self, features):
-        self.incrementer.valueChanged.connect(lambda: features.manualStockChange(self.item_id, self.incrementer.value()))
+        self.decreaseStockButton.clicked.connect(lambda: features.manualStockChange(self.item_id, -1))
+        self.increaseStockButton.clicked.connect(lambda: features.manualStockChange(self.item_id, 1))
+
