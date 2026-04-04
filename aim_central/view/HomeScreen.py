@@ -95,7 +95,8 @@ class MainWindow(QMainWindow):
 
         for i in range(1, containers_per_row + 1):
             stock_level = self.model.getContainerStockLevel(i)
-            self.container_buttons_list.append(ContainerButton(i, self.model))
+            container_text = self.createContainerText(i)
+            self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
             row1Containers.addWidget(self.container_buttons_list[i])
 
         mainLayout.addLayout(row1Containers)
@@ -111,7 +112,8 @@ class MainWindow(QMainWindow):
 
             for i in range(containers_per_row + 1, containers_per_row + second_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, self.model))
+                container_text = self.createContainerText(i)
+                self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
                 row2Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row2Containers)
@@ -128,13 +130,30 @@ class MainWindow(QMainWindow):
 
             for i in range(2*containers_per_row + 1, 2*containers_per_row + third_row_containers + 1):
                 stock_level = self.model.getContainerStockLevel(i)
-                self.container_buttons_list.append(ContainerButton(i, self.model))
+                container_text = self.createContainerText(i)
+                self.container_buttons_list.append(ContainerButton(i, container_text, stock_level))
                 row3Containers.addWidget(self.container_buttons_list[i])
 
             mainLayout.addLayout(row3Containers)
             mainLayout.addSpacing(20)
         
         return mainLayout
+
+    def createContainerText(self, containerId):
+        containerName = self.model.getContainerName(containerId)
+        items = self.model.findContainer(containerId)["items"]
+
+        containerText = ""
+
+        if len(items) == 1:
+            containerText = f"{containerName} ({items[0]['current_stock']}/{items[0]['needed_stock']})"
+
+        elif len(items) > 1:
+            containerText = f"{containerName}\n"
+            for item in items:
+                containerText += f"{item['item_name']}: {item['current_stock']}/{item['needed_stock']} \n"
+
+        return containerText
 
 
     def keyPressEvent(self, event):
@@ -160,24 +179,14 @@ class MainWindow(QMainWindow):
     
     def refreshContainerButtons(self):
         for button in self.container_buttons_list:
-            if button != 0: # index 0 is not used, just a placeholder for ease of use with container ids
+            if button != 0 and button != None: # index 0 is not used, just a placeholder for ease of use with container ids
                 containerId = button.containerId
                 stockLevel = self.model.getContainerStockLevel(containerId)
-                containerName = self.model.getContainerName(containerId)
-                items = self.model.findContainer(containerId)["items"]
+                containerText = self.createContainerText(containerId)
 
-                containerText = ""
-
-                if len(items) == 1:
-                    containerText = f"{containerName} ({items[0]['current_stock']}/{items[0]['needed_stock']})"
-
-                elif len(items) > 1:
-                    containerText = f"{containerName}\n"
-                    for item in items:
-                        containerText += f"{item['item_name']}: {item['current_stock']}/{item['needed_stock']} \n"
-
+                print(f"setting stock level, current stock level is: {stockLevel}")
                 button.setStockLevel(stockLevel)
-                button.setText(containerText)
+                button.setContainerText(containerText)
     
     def refreshContainerSettings(self):
         self.calibrateWindow.refreshContainerSettings()
