@@ -129,7 +129,17 @@ class CalibrateWindow(QMainWindow):
 
         self.tareAllContainers = QPushButton("Tare All Containers")
         self.tareAllContainers.setFixedHeight(50)
-        self.tareAllContainers.setStyleSheet("padding: 10px 20px; font-size: 20px; font-style: bold;")  # Override padding to make text visible
+        self.tareAllContainers.setStyleSheet("""
+                                             QPushButton {
+                                                padding: 10px 20px; 
+                                                font-size: 20px; 
+                                                font-style: bold; 
+                                                background-color: #4CAF50;
+                                             }
+                                             QPushButton::pressed {
+                                                background-color: #3B9E40;
+                                             }
+                                             """)  # Override padding to make text visible
         mainLayout.addWidget(self.tareAllContainers, alignment=Qt.AlignmentFlag.AlignCenter)
 
 
