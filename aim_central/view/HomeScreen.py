@@ -141,10 +141,6 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key.Key_Escape:
             self.showNormal()
     
-    def updateContainerDisplay(self, containerId):
-        button = self.container_buttons_list[containerId]
-        button = ContainerButton(containerId, self.model)
-
     def openContainerDetails(self, container_details):
         dialog = ContainerDialog(container_details, self)
         dialog.exec()
@@ -166,7 +162,22 @@ class MainWindow(QMainWindow):
         for button in self.container_buttons_list:
             if button != 0: # index 0 is not used, just a placeholder for ease of use with container ids
                 containerId = button.containerId
-                self.updateContainerDisplay(containerId)
+                stockLevel = self.model.getContainerStockLevel(containerId)
+                containerName = self.model.getContainerName(containerId)
+                items = self.model.findContainer(containerId)["items"]
+
+                containerText = ""
+
+                if len(items) == 1:
+                    containerText = f"{containerName} ({items[0]['current_stock']}/{items[0]['needed_stock']})"
+
+                elif len(items) > 1:
+                    containerText = f"{containerName}\n"
+                    for item in items:
+                        containerText += f"{item['item_name']}: {item['current_stock']}/{item['needed_stock']} \n"
+
+                button.setStockLevel(stockLevel)
+                button.setText(containerText)
     
     def refreshContainerSettings(self):
         self.calibrateWindow.refreshContainerSettings()

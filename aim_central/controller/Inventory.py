@@ -9,10 +9,10 @@ class Controller():
         self.bridge = bridge
 
     
-    def manualStockChange(self, itemId, newAmt):
-        print(f"Manual stock change for item {itemId} to new amount: {newAmt}")
+    def manualStockChange(self, itemId, amt):
+        print(f"Manual stock change for item {itemId} by {amt}")
         if self.model:
-            self.model.setStock(itemId, newAmt)
+            self.model.changeStock(itemId, amt)
             self.view.refreshContainerButtons()
             self.view.refreshContainerSettings()
 
