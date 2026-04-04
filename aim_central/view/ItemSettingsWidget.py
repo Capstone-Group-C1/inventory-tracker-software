@@ -13,7 +13,6 @@ class ItemSettingsWidget(QWidget):
     def __init__(self, model, item_id, parent=None):
         super().__init__(parent)
         self.model = model
-        self.item_id = item_id
         self.stock_level = model.getStockLevel(item_id)
         self.info = model.findItem(item_id)
 
@@ -28,7 +27,7 @@ class ItemSettingsWidget(QWidget):
         self.setLayout(layout)
         
 
-        self.label = QLabel(f"""Item: {self.info['item_name']}<br>Item Id: {self.info['item_id']}<br>Item Weight: {self.info['item_weight']} g<br>Stock Level: <span style='color: {stock_color};'>{stock_level}</span>""")
+        self.label = QLabel(f"""Item: {self.info['item_name']}<br>Item Weight: {self.info['item_weight']} g<br>Stock Level: <span style='color: {stock_color};'>{stock_level}</span>""")
         self.label.setWordWrap(True)
         self.label.setStyleSheet("padding: 4px; margin: 0px; background-color: transparent; font-size: 20px;")
         self.label.setTextFormat(Qt.TextFormat.RichText)

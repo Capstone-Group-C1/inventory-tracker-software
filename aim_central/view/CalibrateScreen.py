@@ -68,7 +68,7 @@ class CalibrateWindow(QMainWindow):
         scroll = QScrollArea()
         container = QWidget()
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout("settings")
+        self.topBarLayout = TopBarLayout()
         row1Containers = QHBoxLayout()
 
         
@@ -170,8 +170,6 @@ class CalibrateWindow(QMainWindow):
         self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
         self.button_action2.triggered.connect(lambda: self.features.toggleGPSWindow(self))
         self.tareAllContainers.clicked.connect(lambda: self.features.tareAllContainers())
-
-        self.topBarLayout.addFeatures(features)
         
         for container_widget in self.container_widgets_list:
             container_widget.addFeatures(features)

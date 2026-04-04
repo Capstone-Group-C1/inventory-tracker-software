@@ -89,12 +89,12 @@ class MainWindow(QMainWindow):
     
     def createLayout(self):
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout("home")
+        self.topBarLayout = TopBarLayout()
         row1Containers = QHBoxLayout()
 
         
         mainLayout.addLayout(self.topBarLayout)
-        mainLayout.addSpacing(20)
+        mainLayout.addSpacing(10)
         mainLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         num_containers = self.model.getNumContainers()
@@ -220,7 +220,6 @@ class MainWindow(QMainWindow):
         for button in self.container_buttons_list:
             button.addFeatures(features)
         
-        self.topBarLayout.addFeatures(features)
         self.calibrateWindow.addFeatures(features)
         self.GPSSettingsWindow.addFeatures(features)
         

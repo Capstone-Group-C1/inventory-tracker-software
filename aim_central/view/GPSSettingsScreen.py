@@ -52,7 +52,7 @@ class GPSSettingsWindow(QMainWindow):
         file_menu.addAction(self.button_action2)
 
         mainLayout = QVBoxLayout()
-        self.topBarLayout = TopBarLayout("gps")
+        self.topBarLayout = TopBarLayout()
 
         
         mainLayout.addLayout(self.topBarLayout)
@@ -73,6 +73,4 @@ class GPSSettingsWindow(QMainWindow):
             self.features = features
             self.button_action.triggered.connect(lambda: self.features.toggleHomeWindow(self))
             self.button_action2.triggered.connect(lambda: self.features.toggleCalibrateWindow(self))
-
-            self.topBarLayout.addFeatures(features)
 
